@@ -29,6 +29,7 @@ export interface Workshop {
 }
 
 export type RegistrationStatus = 'confirmed' | 'cancelled'
+export type GuardianStatus = 'nao_necessaria' | 'pendente' | 'confirmada'
 
 export interface RegistrationRow {
   id: string
@@ -39,7 +40,11 @@ export interface RegistrationRow {
   phone: string
   email: string
   instagram: string | null
+  birth_date: string | null
   consent_required: boolean
+  image_consent: boolean
+  guardian_ack: boolean
+  guardian_authorization_status: GuardianStatus
   consent_marketing: boolean
   status: RegistrationStatus
   checked_in: boolean
@@ -50,6 +55,14 @@ export interface RegistrationRow {
     event_day: string
     start_time: string
   }
+}
+
+export interface EventSettings {
+  location_name: string
+  location_address: string
+  event_start_date: string
+  event_end_date: string
+  guardian_authorization_pdf_url: string | null
 }
 
 export interface ConfirmationData {

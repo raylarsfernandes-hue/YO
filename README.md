@@ -34,26 +34,42 @@ não apenas pela tela de login.
    deste projeto, cole no editor e clique em **Run**.
    Isso cria as tabelas, a view pública, as funções de inscrição/cancelamento,
    as regras de segurança (RLS) e já cadastra as 8 oficinas de exemplo.
-4. Em **Project Settings → API**, copie:
+4. Em seguida, rode também o arquivo [`supabase/migration_v2.sql`](./supabase/migration_v2.sql)
+   (nova query, colar, Run). Ele adiciona: data de nascimento, autorização de uso de
+   imagem, fluxo de menor de idade, a tabela `event_settings` (local/datas
+   configuráveis) e reforça o cadastro das 8 oficinas caso alguma esteja faltando.
+   **Se você já rodou o projeto antes só com o `schema.sql`, rode agora o
+   `migration_v2.sql` — ele não apaga nada, só adiciona.**
+5. Em **Project Settings → API**, copie:
    - **Project URL** → vai virar `VITE_SUPABASE_URL`
-   - **anon public key** → vai virar `VITE_SUPABASE_ANON_KEY`
+   - Na aba **API Keys**, dentro de **"Legacy anon, service_role API keys"**,
+     copie a **anon key** (formato `eyJhbGciOiJIUzI1NiIs...`) → vai virar
+     `VITE_SUPABASE_ANON_KEY`. Use essa, e não a "publishable key" nova
+     (`sb_publishable_...`), pois a versão da biblioteca usada neste projeto
+     espera o formato antigo.
 
-Essas duas informações são públicas por design (é assim que o Supabase
+Essas informações são públicas por design (é assim que o Supabase
 funciona) — a segurança real vem das políticas de RLS que já estão no
 `schema.sql`, não da chave em si.
 
-## 2. Criar seu usuário administrador
+## 2. Acessar a área administrativa
 
-1. No Supabase, vá em **Authentication → Users → Add user** e crie seu
-   usuário com e-mail e senha (marque "Auto Confirm User").
-2. Copie o **UUID** desse usuário (aparece na lista de usuários).
-3. Volte ao **SQL Editor** e rode:
-   ```sql
-   insert into admins (user_id) values ('COLE_O_UUID_AQUI');
-   ```
-4. Pronto — esse e-mail/senha agora acessa `/admin` no site.
-
-Repita o passo 3 para cada pessoa que precisar acessar o dashboard.
+- **URL**: `/admin` (ex: `https://seu-site.netlify.app/admin`). Se você não estiver
+  logado, ela redireciona automaticamente para `/admin/login`.
+- **Como criar o usuário administrador**: no Supabase, vá em
+  **Authentication → Users → Add user**, crie um e-mail e senha (marque
+  "Auto Confirm User"). Copie o **UUID** desse usuário.
+- Volte ao **SQL Editor** e rode:
+  ```sql
+  insert into admins (user_id) values ('COLE_O_UUID_AQUI');
+  ```
+  Sem esse passo, o login até funciona, mas o dashboard fica bloqueado com
+  "Acesso não autorizado" — é a proteção por Row Level Security funcionando.
+- Repita o passo do UUID para cada pessoa que precisar acessar o `/admin`.
+- **Recuperar/trocar senha**: pelo próprio Supabase, em Authentication → Users,
+  clique nos três pontinhos ao lado do usuário → "Send password recovery" ou
+  edite diretamente. Não existe fluxo de "esqueci minha senha" na tela de
+  login do site — isso é gerenciado direto no Supabase.
 
 ## 3. Rodar localmente
 
@@ -90,9 +106,62 @@ Acesse `/admin/oficinas` logado como administrador. Você pode:
 - ativar/desativar inscrições de uma oficina específica;
 - cadastrar novas oficinas caso a programação mude.
 
-Tudo reflete no site imediatamente, sem precisar publicar de novo.
+Tudo reflete no site imediatamente, sem precisar publicar de novo. A página
+pública `/oficinas` mostra a mesma lista para quem está se inscrevendo.
 
-## 6. Como acompanhar e exportar as inscrições
+## 5.1 Como editar o local, as datas e o PDF de autorização de menores
+
+Acesse `/admin/configuracoes`. Esse painel edita a tabela `event_settings`
+(uma única linha no banco) com:
+- nome e endereço do local do evento;
+- data de início e término (usada para calcular a idade dos participantes
+  **na data do evento**, não na data da inscrição);
+- link do PDF de autorização para menores de idade.
+
+Como Home, Oficinas, Inscrição e Confirmação leem esses valores direto do
+banco, mudar aqui atualiza o site inteiro de uma vez — não existe mais texto
+de local "hardcoded" espalhado pelo código.
+
+Para o PDF de autorização: hospede o arquivo em qualquer lugar acessível
+publicamente (ex: um link do Google Drive com compartilhamento público, ou
+suba o PDF nos Storage Buckets do próprio Supabase e use a URL pública
+gerada) e cole o link nesse campo. Enquanto não houver link cadastrado, o
+formulário mostra um aviso de que o modelo "será disponibilizado em breve".
+
+## 6. Menores de idade
+
+O formulário pede data de nascimento e calcula automaticamente se a pessoa
+é menor de 18 anos **considerando a idade na data de início do evento**
+(configurável em `/admin/configuracoes`), não a idade no dia da inscrição.
+
+Se for menor:
+- aparece um aviso com o link de download da autorização (se configurado);
+- fica obrigatório o checkbox de ciência sobre a autorização do responsável;
+- a inscrição é salva com `guardian_authorization_status = 'pendente'`.
+
+No admin (`/admin/inscritos`), cada menor aparece com uma etiqueta "Menor" e
+um seletor para marcar a autorização como "Pendente" ou "Confirmada" assim
+que o papel assinado chegar fisicamente no dia do evento (ou por e-mail). Há
+também um filtro "Só menores de idade" para localizar rapidamente esses
+participantes, e um indicador no Dashboard mostrando quantos menores estão
+inscritos e quantas autorizações já foram confirmadas.
+
+O upload do PDF assinado pelo responsável não está implementado ainda (como
+combinado, para não aumentar a complexidade neste momento), mas a estrutura
+já está pronta: quando quiserem adicionar, basta um novo campo de arquivo no
+formulário enviando para o Supabase Storage e salvando a URL numa nova coluna
+em `registrations`.
+
+## 7. Como cadastrar oficinas iniciais / repopular o banco
+
+O `schema.sql` já cadastra as 8 oficinas do evento automaticamente (com 30
+vagas cada, valores provisórios e totalmente editáveis depois). Se por
+algum motivo elas não aparecerem no site (por exemplo, se o `schema.sql` foi
+rodado parcialmente), rode o `migration_v2.sql` — ele verifica oficina por
+oficina e insere só as que estiverem faltando, sem duplicar nada. Você
+também pode sempre cadastrar manualmente pelo `/admin/oficinas`.
+
+## 8. Como acompanhar e exportar as inscrições
 
 Em `/admin/inscritos` você tem busca (nome, CPF, e-mail, telefone), filtros
 por oficina e status, check-in no dia do evento, cancelamento (que libera a
@@ -103,7 +172,7 @@ filtrado na tela — então dá para exportar tudo ou só uma oficina específic
 (filtre pela oficina e use "Exportar só esta oficina"). O CSV abre
 corretamente no Excel, com acentuação preservada.
 
-## 7. Regra de uma pessoa por aula (e como mudar no futuro)
+## 9. Regra de uma pessoa por aula (e como mudar no futuro)
 
 Hoje a regra é: mesmo CPF não pode se inscrever duas vezes na **mesma**
 oficina, mas pode se inscrever em oficinas diferentes, se houver vaga. Essa
@@ -112,7 +181,7 @@ regra está centralizada na função `register_for_workshop` no
 quiserem limitar a "1 oficina por pessoa" ou "1 por dia", é só ajustar essa
 função — não precisa mexer no front-end.
 
-## 8. Sobre envio de confirmação por e-mail/WhatsApp
+## 10. Sobre envio de confirmação por e-mail/WhatsApp
 
 A estrutura já está pronta para isso (o código de inscrição e os dados do
 participante ficam salvos), mas o envio automático não está implementado
@@ -122,20 +191,60 @@ simples é criar uma Netlify Function que dispara ao término da função
 `register_for_workshop` (via um Postgres Webhook do Supabase) chamando um
 provedor de e-mail (Resend, SendGrid) ou WhatsApp (Twilio, Z-API).
 
-## 9. Estrutura do projeto
+## 11. Estrutura do projeto
 
 ```
 src/
-  pages/            Home, Inscricao, Confirmacao
-  pages/admin/       Login, Dashboard, Inscritos, Oficinas
-  components/        Header, Footer, WorkshopCard
-  utils/             validação de CPF/e-mail, formatação, CSV
-  supabaseClient.ts  cliente único do Supabase
+  pages/             Home, Oficinas, Inscricao, Confirmacao
+  pages/admin/        Login, Dashboard, Inscritos, Oficinas, Configuracoes
+  components/         Header, Footer, InstitutionalBar, WorkshopCard
+  hooks/               useEventSettings (local/datas/PDF de autorização)
+  utils/               validação de CPF/e-mail/data, cálculo de idade, CSV
+  supabaseClient.ts   cliente único do Supabase
 supabase/
-  schema.sql         schema completo do banco (rode uma vez no Supabase)
+  schema.sql          schema base (rode primeiro, uma vez)
+  migration_v2.sql    campos novos: nascimento, imagem, menores, event_settings
 ```
 
-## 10. Segurança — o que já está garantido
+## 12. Variáveis de ambiente necessárias no Netlify
+
+Só estas duas, em Site settings → Environment variables:
+
+- `VITE_SUPABASE_URL` — URL do projeto (Project Settings → API no Supabase)
+- `VITE_SUPABASE_ANON_KEY` — a **anon key** no formato antigo (aba "Legacy
+  anon, service_role API keys" em Project Settings → API Keys). Não use a
+  `service_role` nem a `sb_publishable_...` nova.
+
+Depois de criar ou editar essas variáveis, é sempre necessário rodar
+**Deploys → Trigger deploy → Clear cache and deploy site** — só salvar a
+variável não refaz o build sozinho.
+
+## 13. Checklist de teste completo em produção
+
+1. Abrir a home — conferir se aparece a faixa "Realização / apoio
+   institucional" visível (não só no rodapé).
+2. Clicar em "Oficinas" no menu → conferir se `/oficinas` lista as 8
+   oficinas com vagas.
+3. Clicar em "Quero me inscrever" numa oficina → deve cair em `/inscricao`
+   já com aquela oficina selecionada.
+4. Preencher nome, CPF, telefone, e-mail e uma data de nascimento que torne
+   a pessoa maior de idade na data do evento → não deve aparecer o aviso de
+   menor.
+5. Testar de novo com uma data de nascimento que torne a pessoa menor de
+   idade → deve aparecer o aviso vermelho com o checkbox extra obrigatório.
+6. Marcar os checkboxes obrigatórios (uso de imagem + veracidade dos dados,
+   e o de responsável se for o teste de menor) e enviar.
+7. Conferir a tela de confirmação com o código gerado (`SHHF-...`).
+8. Entrar em `/admin` com seu usuário administrador.
+9. Em `/admin/inscritos`, localizar a inscrição de teste, conferir idade,
+   status de autorização (se testou como menor) e a oficina certa.
+10. Testar o filtro "Só menores de idade".
+11. Exportar o CSV e conferir se as colunas novas (nascimento, idade,
+    autorização) vieram preenchidas.
+12. Em `/admin/configuracoes`, trocar o nome do local e salvar → voltar na
+    home e na tela de confirmação e conferir se o texto mudou.
+
+## 14. Segurança — o que já está garantido
 
 - CPF, telefone e e-mail dos inscritos só são legíveis por administradores
   (RLS bloqueia leitura da tabela `registrations` para qualquer outro

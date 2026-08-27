@@ -53,6 +53,14 @@ export function formatDayLong(isoDate: string): string {
   return `${d} de ${MONTHS[m - 1]}`
 }
 
+export function formatDateRangeShort(startISO: string, endISO: string): string {
+  const [, sm, sd] = startISO.split('-').map(Number)
+  const [, , ed] = endISO.split('-').map(Number)
+  const monthAbbr = MONTHS[sm - 1].slice(0, 3).toUpperCase()
+  if (startISO === endISO) return `${sd} ${monthAbbr}`
+  return `${sd} + ${ed} ${monthAbbr}`
+}
+
 export function formatDayShort(isoDate: string): string {
   const [y, m, d] = isoDate.split('-').map(Number)
   const date = new Date(y, m - 1, d)
@@ -69,6 +77,40 @@ export function statusLabel(status: string): string {
       return 'Esgotada'
     case 'encerrada':
       return 'Inscrições encerradas'
+    default:
+      return status
+  }
+}
+
+/** Idade que a pessoa terá NA DATA DE REFERÊNCIA (ex: início do evento), não hoje. */
+export function computeAge(birthDateISO: string, referenceDateISO: string): number {
+  const birth = new Date(birthDateISO + 'T00:00:00')
+  const ref = new Date(referenceDateISO + 'T00:00:00')
+  let age = ref.getFullYear() - birth.getFullYear()
+  const m = ref.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && ref.getDate() < birth.getDate())) age--
+  return age
+}
+
+export function isValidBirthDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const date = new Date(value + 'T00:00:00')
+  if (Number.isNaN(date.getTime())) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  if (date > today) return false
+  if (date.getFullYear() < 1900) return false
+  return true
+}
+
+export function guardianStatusLabel(status: string): string {
+  switch (status) {
+    case 'nao_necessaria':
+      return 'Não necessária'
+    case 'pendente':
+      return 'Pendente'
+    case 'confirmada':
+      return 'Confirmada'
     default:
       return status
   }

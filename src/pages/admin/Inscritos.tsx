@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../supabaseClient'
-import type { RegistrationRow, Workshop } from '../../types'
+import { useEventSettings } from '../../hooks/useEventSettings'
+import type { RegistrationRow, Workshop, GuardianStatus } from '../../types'
 import { downloadCSV } from '../../utils/csv'
-import { formatDayLong } from '../../utils/format'
+import { formatDayLong, computeAge, guardianStatusLabel } from '../../utils/format'
 
 export default function Inscritos() {
+  const { settings } = useEventSettings()
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([])
   const [workshops, setWorkshops] = useState<Workshop[]>([])
   const [loading, setLoading] = useState(true)
@@ -12,6 +14,7 @@ export default function Inscritos() {
   const [search, setSearch] = useState('')
   const [filterWorkshop, setFilterWorkshop] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+  const [filterMinors, setFilterMinors] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -29,18 +32,30 @@ export default function Inscritos() {
 
   useEffect(() => { load() }, [])
 
+  function ageOf(r: RegistrationRow): number | null {
+    if (!r.birth_date) return null
+    return computeAge(r.birth_date, settings.event_start_date)
+  }
+
+  function isMinor(r: RegistrationRow): boolean {
+    const age = ageOf(r)
+    return age !== null && age < 18
+  }
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()
     return registrations.filter((r) => {
       if (filterWorkshop && r.workshop_id !== filterWorkshop) return false
       if (filterStatus && r.status !== filterStatus) return false
+      if (filterMinors && !isMinor(r)) return false
       if (term) {
         const haystack = `${r.full_name} ${r.cpf} ${r.email} ${r.phone}`.toLowerCase()
         if (!haystack.includes(term)) return false
       }
       return true
     })
-  }, [registrations, search, filterWorkshop, filterStatus])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registrations, search, filterWorkshop, filterStatus, filterMinors, settings.event_start_date])
 
   async function handleCancel(id: string) {
     if (!confirm('Cancelar esta inscrição? A vaga será liberada automaticamente.')) return
@@ -61,6 +76,11 @@ export default function Inscritos() {
     load()
   }
 
+  async function handleGuardianStatus(id: string, status: GuardianStatus) {
+    await supabase.from('registrations').update({ guardian_authorization_status: status }).eq('id', id)
+    load()
+  }
+
   function exportAll() {
     downloadCSV('inscricoes-sumare-hiphop.csv', toCSVRows(filtered))
   }
@@ -72,22 +92,30 @@ export default function Inscritos() {
   }
 
   function toCSVRows(rows: RegistrationRow[]) {
-    return rows.map((r) => ({
-      Codigo: r.code,
-      Nome: r.full_name,
-      CPF: r.cpf,
-      Telefone: r.phone,
-      Email: r.email,
-      Instagram: r.instagram ?? '',
-      Oficina: r.workshops?.name ?? '',
-      Professor: r.workshops?.teacher ?? '',
-      Dia: r.workshops ? formatDayLong(r.workshops.event_day) : '',
-      Horario: r.workshops?.start_time ?? '',
-      InscritoEm: new Date(r.created_at).toLocaleString('pt-BR'),
-      AceitaComunicacao: r.consent_marketing ? 'Sim' : 'Não',
-      CheckIn: r.checked_in ? 'Compareceu' : 'Não compareceu',
-      Status: r.status === 'confirmed' ? 'Confirmada' : 'Cancelada',
-    }))
+    return rows.map((r) => {
+      const age = ageOf(r)
+      return {
+        Codigo: r.code,
+        Nome: r.full_name,
+        CPF: r.cpf,
+        Telefone: r.phone,
+        Email: r.email,
+        Instagram: r.instagram ?? '',
+        DataNascimento: r.birth_date ?? '',
+        IdadeNoEvento: age ?? '',
+        MenorDeIdade: age !== null && age < 18 ? 'Sim' : 'Não',
+        AutorizacaoResponsavel: guardianStatusLabel(r.guardian_authorization_status),
+        AutorizacaoImagem: r.image_consent ? 'Sim' : 'Não',
+        Oficina: r.workshops?.name ?? '',
+        Professor: r.workshops?.teacher ?? '',
+        Dia: r.workshops ? formatDayLong(r.workshops.event_day) : '',
+        Horario: r.workshops?.start_time ?? '',
+        InscritoEm: new Date(r.created_at).toLocaleString('pt-BR'),
+        AceitaComunicacao: r.consent_marketing ? 'Sim' : 'Não',
+        CheckIn: r.checked_in ? 'Compareceu' : 'Não compareceu',
+        Status: r.status === 'confirmed' ? 'Confirmada' : 'Cancelada',
+      }
+    })
   }
 
   if (loading) return <p>Carregando inscritos...</p>
@@ -115,6 +143,10 @@ export default function Inscritos() {
           <option value="confirmed">Confirmada</option>
           <option value="cancelled">Cancelada</option>
         </select>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+          <input type="checkbox" checked={filterMinors} onChange={(e) => setFilterMinors(e.target.checked)} />
+          Só menores de idade
+        </label>
         <button className="btn-sm ok" onClick={exportAll}>Exportar inscrições (CSV)</button>
         {filterWorkshop && (
           <button className="btn-sm" onClick={() => exportWorkshop(filterWorkshop)}>Exportar só esta oficina</button>
@@ -130,45 +162,66 @@ export default function Inscritos() {
               <th>CPF</th>
               <th>Telefone</th>
               <th>E-mail</th>
+              <th>Nascimento</th>
+              <th>Idade</th>
+              <th>Autorização resp.</th>
               <th>Oficina</th>
               <th>Dia / Horário</th>
-              <th>Inscrito em</th>
               <th>Status</th>
               <th>Check-in</th>
               <th>Ações</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((r) => (
-              <tr key={r.id}>
-                <td>{r.code}</td>
-                <td>{r.full_name}</td>
-                <td>{r.cpf}</td>
-                <td>{r.phone}</td>
-                <td>{r.email}</td>
-                <td>{r.workshops?.name} — {r.workshops?.teacher}</td>
-                <td>{r.workshops && formatDayLong(r.workshops.event_day)} · {r.workshops?.start_time}</td>
-                <td>{new Date(r.created_at).toLocaleString('pt-BR')}</td>
-                <td><span className={`status-tag ${r.status}`}>{r.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}</span></td>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={r.checked_in}
-                    onChange={(e) => handleCheckin(r.id, e.target.checked)}
-                    disabled={r.status !== 'confirmed'}
-                  />
-                </td>
-                <td>
-                  {r.status === 'confirmed' ? (
-                    <button className="btn-sm danger" onClick={() => handleCancel(r.id)}>Cancelar</button>
-                  ) : (
-                    <button className="btn-sm ok" onClick={() => handleReactivate(r.id)}>Reativar</button>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {filtered.map((r) => {
+              const age = ageOf(r)
+              const minor = isMinor(r)
+              return (
+                <tr key={r.id}>
+                  <td>{r.code}</td>
+                  <td>{r.full_name}</td>
+                  <td>{r.cpf}</td>
+                  <td>{r.phone}</td>
+                  <td>{r.email}</td>
+                  <td>{r.birth_date ?? '—'}</td>
+                  <td>{age ?? '—'}{minor && <span className="badge ultimas" style={{ marginLeft: 6 }}>Menor</span>}</td>
+                  <td>
+                    {minor ? (
+                      <select
+                        value={r.guardian_authorization_status}
+                        onChange={(e) => handleGuardianStatus(r.id, e.target.value as GuardianStatus)}
+                        style={{ background: 'var(--preto)', color: 'var(--branco)', border: '1px solid var(--borda)', borderRadius: 4, fontSize: 12, padding: '4px 6px' }}
+                      >
+                        <option value="pendente">Pendente</option>
+                        <option value="confirmada">Confirmada</option>
+                      </select>
+                    ) : (
+                      <span style={{ opacity: 0.5, fontSize: 12 }}>Não necessária</span>
+                    )}
+                  </td>
+                  <td>{r.workshops?.name} — {r.workshops?.teacher}</td>
+                  <td>{r.workshops && formatDayLong(r.workshops.event_day)} · {r.workshops?.start_time}</td>
+                  <td><span className={`status-tag ${r.status}`}>{r.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}</span></td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={r.checked_in}
+                      onChange={(e) => handleCheckin(r.id, e.target.checked)}
+                      disabled={r.status !== 'confirmed'}
+                    />
+                  </td>
+                  <td>
+                    {r.status === 'confirmed' ? (
+                      <button className="btn-sm danger" onClick={() => handleCancel(r.id)}>Cancelar</button>
+                    ) : (
+                      <button className="btn-sm ok" onClick={() => handleReactivate(r.id)}>Reativar</button>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
             {filtered.length === 0 && (
-              <tr><td colSpan={11} style={{ textAlign: 'center', opacity: 0.6, padding: 20 }}>Nenhuma inscrição encontrada.</td></tr>
+              <tr><td colSpan={13} style={{ textAlign: 'center', opacity: 0.6, padding: 20 }}>Nenhuma inscrição encontrada.</td></tr>
             )}
           </tbody>
         </table>

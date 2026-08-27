@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabaseClient'
+import { useEventSettings } from '../../hooks/useEventSettings'
 import type { WorkshopPublic, RegistrationRow } from '../../types'
-import { formatDayLong, statusLabel } from '../../utils/format'
+import { formatDayLong, statusLabel, computeAge } from '../../utils/format'
 
 export default function Dashboard() {
+  const { settings } = useEventSettings()
   const [workshops, setWorkshops] = useState<WorkshopPublic[]>([])
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -40,6 +42,10 @@ export default function Dashboard() {
 
   const recentes = registrations.slice(0, 6)
 
+  const menores = confirmed.filter((r) => r.birth_date && computeAge(r.birth_date, settings.event_start_date) < 18)
+  const menoresConfirmados = menores.filter((r) => r.guardian_authorization_status === 'confirmada').length
+  const menoresPendentes = menores.filter((r) => r.guardian_authorization_status === 'pendente').length
+
   if (loading) return <p>Carregando indicadores...</p>
 
   return (
@@ -48,26 +54,35 @@ export default function Dashboard() {
       <p style={{ opacity: 0.6, fontSize: 14, marginBottom: 20 }}>Visão geral atualizada em tempo real.</p>
 
       <div className="grid-4">
-        <div className="card accent">
+        <div className="card">
           <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{totalInscricoes}</div>
           <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Total de inscrições</div>
         </div>
-        <div className="card accent">
+        <div className="card">
           <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{pessoasUnicas}</div>
           <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Pessoas únicas</div>
         </div>
-        <div className="card accent">
+        <div className="card">
           <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{vagasPreenchidas}/{totalVagas}</div>
           <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Vagas ocupadas</div>
         </div>
-        <div className="card accent">
+        <div className="card">
           <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{ocupacao}%</div>
           <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Ocupação geral</div>
+        </div>
+        <div className="card">
+          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--vermelho)', fontFamily: 'Oswald' }}>{menores.length}</div>
+          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Menores de idade</div>
+          {menores.length > 0 && (
+            <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>
+              {menoresConfirmados} autorizações confirmadas · {menoresPendentes} pendentes
+            </div>
+          )}
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 24 }}>
-        <div className="card accent">
+        <div className="card">
           <h3 style={{ fontSize: 15, marginBottom: 12 }}>Oficinas mais procuradas</h3>
           {ranking.map((w, i) => (
             <div key={w.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '7px 0', borderBottom: '1px solid var(--borda)' }}>
@@ -82,7 +97,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="card accent">
+        <div className="card">
           <h3 style={{ fontSize: 15, marginBottom: 12 }}>Inscrições por dia</h3>
           {Object.entries(porDia).sort().map(([dia, count]) => (
             <div key={dia} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '7px 0', borderBottom: '1px solid var(--borda)' }}>
@@ -105,7 +120,7 @@ export default function Dashboard() {
         {workshops.map((w) => {
           const pct = Math.round((w.taken / Math.max(w.max_vagas, 1)) * 100)
           return (
-            <div key={w.id} className="card accent">
+            <div key={w.id} className="card">
               <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>{formatDayLong(w.event_day)} · {w.start_time}</div>
               <div style={{ fontSize: 18, fontWeight: 700, margin: '4px 0' }}>{w.name} — {w.teacher}</div>
               <div className="progress-bar" style={{ margin: '10px 0' }}><div style={{ width: `${pct}%` }} /></div>

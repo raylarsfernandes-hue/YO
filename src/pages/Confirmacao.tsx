@@ -4,10 +4,12 @@ import { supabase } from '../supabaseClient'
 import type { ConfirmationData } from '../types'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import { useEventSettings } from '../hooks/useEventSettings'
 import { formatDayLong } from '../utils/format'
 
 export default function Confirmacao() {
   const { code } = useParams()
+  const { settings } = useEventSettings()
   const [data, setData] = useState<ConfirmationData | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -46,7 +48,7 @@ export default function Confirmacao() {
 
         {!loading && data && (
           <>
-            <div className="confirm-stamp">✓</div>
+            <div className="confirm-check">✓</div>
             <h2>Inscrição confirmada!</h2>
             <p style={{ opacity: 0.75, marginTop: 10 }}>
               {data.status === 'cancelled'
@@ -60,10 +62,10 @@ export default function Confirmacao() {
               <div className="row"><span>Professor(a)</span><strong>{data.teacher}</strong></div>
               <div className="row"><span>Data</span><strong>{formatDayLong(data.event_day)}</strong></div>
               <div className="row"><span>Horário</span><strong>{data.start_time}</strong></div>
-              <div className="row"><span>Local</span><strong>CÉU das Artes de Sumaré</strong></div>
+              <div className="row"><span>Local</span><strong>{settings.location_name}</strong></div>
             </div>
 
-            <div className="confirm-code"><span>{data.code}</span></div>
+            <div className="confirm-code">{data.code}</div>
 
             <div style={{ marginTop: 30, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link to="/inscricao" className="btn-secondary">Inscrever-se em outra oficina</Link>

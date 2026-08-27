@@ -7,8 +7,8 @@
  *      import prefeitura from '../assets/institucional/prefeitura.png'
  * 3. Substitua os objetos do array LOGOS abaixo por { src: prefeitura, alt: 'Prefeitura de Sumaré' }.
  *
- * Como este componente é usado em Home, Inscricao e Confirmacao, atualizar aqui
- * reflete automaticamente em todas as páginas públicas.
+ * Este componente é usado em Home, Oficinas, Inscricao, Confirmacao (via Footer) —
+ * atualizar aqui reflete automaticamente em todas as páginas públicas.
  */
 
 interface InstitutionalLogo {
@@ -16,7 +16,6 @@ interface InstitutionalLogo {
   alt: string
 }
 
-// Enquanto os arquivos oficiais não chegam, os slots aparecem como placeholder.
 const LOGOS: InstitutionalLogo[] = [
   { src: null, alt: 'Prefeitura de Sumaré' },
   { src: null, alt: 'Secretaria de Cultura' },

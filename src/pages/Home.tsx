@@ -4,17 +4,12 @@ import { supabase } from '../supabaseClient'
 import type { WorkshopPublic } from '../types'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { formatDayLong } from '../utils/format'
-
-import logo from '../assets/logo_cutout.webp'
-import dancer from '../assets/dancer_cutout.webp'
-import skyline from '../assets/skyline.png'
-import halftone from '../assets/halftone_yellow.png'
-import crown from '../assets/crown_yellow.png'
-import chevrons from '../assets/chevrons.png'
-import brushBlack from '../assets/brush_black.png'
+import InstitutionalBar from '../components/InstitutionalBar'
+import { useEventSettings } from '../hooks/useEventSettings'
+import { formatDayLong, formatDateRangeShort } from '../utils/format'
 
 export default function Home() {
+  const { settings } = useEventSettings()
   const [workshops, setWorkshops] = useState<WorkshopPublic[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -38,30 +33,21 @@ export default function Home() {
       <Header />
 
       <section className="hero">
-        <img src={skyline} alt="" className="hero-skyline" aria-hidden="true" />
-        <img src={halftone} alt="" className="hero-halftone" aria-hidden="true" />
-
-        <div className="hero-grid">
-          <div className="hero-copy">
-            <div className="hero-eyebrow"><span>24 + 25 de outubro · CÉU das Artes de Sumaré</span></div>
-            <img src={logo} alt="Sumaré Hip Hop Festival" className="hero-logo" />
-            <p className="sub">
-              Dois dias de cultura Hip Hop gratuita em Sumaré: oficinas de dança, discotecagem,
-              encontro e formação para quem já vive a cena e para quem está chegando agora.
-            </p>
-            <div className="hero-meta">
-              <span className="pill amarelo">Workshops gratuitos</span>
-              <span className="pill vermelho">Vagas limitadas</span>
-            </div>
-            <div className="hero-actions">
-              <Link to="/inscricao" className="btn-primary"><span>Ver aulas e me inscrever</span></Link>
-              <a href="#oficinas" className="btn-secondary">Ver programação</a>
-            </div>
+        <div className="container">
+          <div className="hero-eyebrow">Direção criativa / brand board aprovado</div>
+          <h1>Sumaré<br />Hip Hop<br />Festival</h1>
+          <p className="sub">
+            Dois dias de cultura Hip Hop gratuita em Sumaré: oficinas de dança, discotecagem,
+            encontro e formação para quem já vive a cena e para quem está chegando agora.
+          </p>
+          <div className="hero-meta">
+            <span className="pill amarelo">{formatDateRangeShort(settings.event_start_date, settings.event_end_date)}</span>
+            <span className="pill">{settings.location_name}</span>
+            <span className="pill vermelho">100% gratuito</span>
           </div>
-
-          <div className="hero-visual">
-            <img src={crown} alt="" className="hero-crown" aria-hidden="true" />
-            <img src={dancer} alt="Bailarino em movimento" className="hero-dancer" />
+          <div className="hero-actions">
+            <Link to="/inscricao" className="btn-primary">Fazer inscrição</Link>
+            <Link to="/oficinas" className="btn-secondary">Ver oficinas</Link>
           </div>
         </div>
       </section>
@@ -105,7 +91,7 @@ export default function Home() {
                 {workshops.filter((w) => w.event_day === dia).map((w) => (
                   <div key={w.id} style={{
                     background: 'var(--branco)', border: '1px solid #d8d4c8',
-                    padding: '14px 18px', minWidth: 220,
+                    borderRadius: 4, padding: '14px 18px', minWidth: 220,
                   }}>
                     <strong>{w.name}</strong> — {w.teacher}
                     <div style={{ fontSize: 13, opacity: 0.6 }}>{w.start_time} · {w.vagas_restantes} vagas</div>
@@ -116,23 +102,23 @@ export default function Home() {
           ))}
 
           <div style={{ marginTop: 40 }}>
-            <Link to="/inscricao" className="btn-primary"><span>Quero me inscrever</span></Link>
+            <Link to="/inscricao" className="btn-primary">Quero me inscrever</Link>
           </div>
         </div>
       </section>
 
       <section className="section dark" id="local">
-        <img src={chevrons} alt="" style={{ position: 'absolute', top: 30, left: 20, width: 140, opacity: 0.6 }} aria-hidden="true" />
         <div className="container">
           <div className="section-kicker">03 — Local e informações</div>
-          <h2>CÉU das Artes de Sumaré.</h2>
+          <h2>{settings.location_name}.</h2>
           <p className="lead">
-            Evento realizado ao ar livre e em espaços cobertos do CÉU das Artes, com apoio da
+            Evento realizado em {settings.location_name} ({settings.location_address}), com apoio da
             Prefeitura de Sumaré. Estrutura pensada para famílias, iniciantes e artistas da cena.
           </p>
-          <img src={brushBlack} alt="" style={{ width: 220, opacity: 0.5, marginTop: 30 }} aria-hidden="true" />
         </div>
       </section>
+
+      <InstitutionalBar />
 
       <Footer />
     </div>

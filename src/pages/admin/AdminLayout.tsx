@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../../supabaseClient'
-import logo from '../../assets/logo_cutout.webp'
 
 export default function AdminLayout() {
   const navigate = useNavigate()
@@ -51,11 +50,11 @@ export default function AdminLayout() {
   return (
     <div className="admin-shell">
       <div className="admin-topbar">
-        <div className="brand"><img src={logo} alt="" /> Inscrições</div>
         <div className="tabs">
           <NavLink to="/admin" end className={({ isActive }) => (isActive ? 'active' : '')}>Dashboard</NavLink>
           <NavLink to="/admin/inscritos" className={({ isActive }) => (isActive ? 'active' : '')}>Inscritos</NavLink>
           <NavLink to="/admin/oficinas" className={({ isActive }) => (isActive ? 'active' : '')}>Oficinas</NavLink>
+          <NavLink to="/admin/configuracoes" className={({ isActive }) => (isActive ? 'active' : '')}>Configurações</NavLink>
         </div>
         <button className="btn-sm" onClick={handleLogout}>Sair</button>
       </div>
