@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useEventSettings } from '../hooks/useEventSettings'
 import { useWorkshopSelection } from '../context/WorkshopSelectionContext'
@@ -11,10 +11,12 @@ import { formatDayLong } from '../utils/format'
 
 export default function Oficinas() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { settings } = useEventSettings()
   const { selected, toggle, isSelected, remove } = useWorkshopSelection()
   const [workshops, setWorkshops] = useState<WorkshopPublic[]>([])
   const [loading, setLoading] = useState(true)
+  const [preselectApplied, setPreselectApplied] = useState(false)
 
   useEffect(() => {
     supabase
@@ -26,6 +28,18 @@ export default function Oficinas() {
         setLoading(false)
       })
   }, [])
+
+  // se veio de um link tipo /oficinas?select=ID (ex: prévia na Home), já adiciona ao carrinho
+  useEffect(() => {
+    if (preselectApplied || loading || workshops.length === 0) return
+    const id = searchParams.get('select')
+    if (id) {
+      const found = workshops.find((w) => w.id === id)
+      if (found && !isSelected(found.id)) toggle(found)
+    }
+    setPreselectApplied(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, workshops])
 
   const dias = Array.from(new Set(workshops.map((w) => w.event_day))).sort()
 

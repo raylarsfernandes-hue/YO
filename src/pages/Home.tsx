@@ -4,7 +4,7 @@ import { supabase } from '../supabaseClient'
 import type { WorkshopPublic } from '../types'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import InstitutionalBar from '../components/InstitutionalBar'
+import SupportStrip from '../components/SupportStrip'
 import { useEventSettings } from '../hooks/useEventSettings'
 import { formatDayLong, formatDateRangeShort } from '../utils/format'
 
@@ -26,12 +26,13 @@ export default function Home() {
 
   const totalVagas = workshops.reduce((acc, w) => acc + w.max_vagas, 0)
   const totalOcupadas = workshops.reduce((acc, w) => acc + w.taken, 0)
-  const dias = Array.from(new Set(workshops.map((w) => w.event_day))).sort()
+  const mapQuery = encodeURIComponent(`${settings.location_name}, ${settings.location_address}`)
 
   return (
     <div>
       <Header />
 
+      {/* 01 — Abertura */}
       <section className="hero">
         <div className="container">
           <h1>Sumaré<br />Hip Hop<br />Festival</h1>
@@ -48,76 +49,131 @@ export default function Home() {
             <Link to="/oficinas" className="btn-primary">Fazer inscrição</Link>
             <Link to="/oficinas" className="btn-secondary">Ver oficinas</Link>
           </div>
+          <SupportStrip />
         </div>
       </section>
 
-      <section className="section dark" id="sobre">
-        <div className="container">
-          <div className="section-kicker">01 — Sobre o projeto</div>
-          <h2>Uma marca cultural própria.</h2>
-          <p className="lead">
-            O festival nasce como uma experiência gratuita de cultura Hip Hop, dança, formação
-            e desenvolvimento social. Rua, movimento, cultura, encontro, formação e território —
-            tudo em dois dias abertos para a comunidade de Sumaré e região.
-          </p>
-          <div className="stats-row">
-            <div className="stat-box"><div className="num">2</div><div className="label">Dias de evento</div></div>
-            <div className="stat-box"><div className="num">8</div><div className="label">Oficinas</div></div>
-            <div className="stat-box"><div className="num">100%</div><div className="label">Gratuito</div></div>
-            <div className="stat-box">
-              <div className="num">{loading ? '—' : Math.max(totalVagas - totalOcupadas, 0)}</div>
-              <div className="label">Vagas disponíveis agora</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="section off" id="oficinas">
-        <div className="container">
-          <div className="section-kicker">02 — Oficinas</div>
-          <h2>Escolha sua vertente.</h2>
-          <p className="lead">
-            Cada oficina tem cerca de 1h10 de duração e vagas limitadas. Confira os dias e
-            professores — e garanta seu lugar antes que a turma esgote.
-          </p>
-
-          {dias.map((dia) => (
-            <div key={dia} style={{ marginTop: 34 }}>
-              <h3 style={{ fontSize: 20, color: 'var(--vermelho)', marginBottom: 4 }}>
-                {formatDayLong(dia)}
-              </h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
-                {workshops.filter((w) => w.event_day === dia).map((w) => (
-                  <div key={w.id} style={{
-                    background: 'var(--branco)', border: '1px solid #d8d4c8',
-                    borderRadius: 4, padding: '14px 18px', minWidth: 220,
-                  }}>
-                    <strong>{w.name}</strong> — {w.teacher}
-                    <div style={{ fontSize: 13, opacity: 0.6 }}>{w.start_time} · {w.vagas_restantes} vagas</div>
-                  </div>
-                ))}
+      {/* 02 — Informações + fotografia */}
+      <section className="section dark">
+        <div className="container split-section">
+          <div className="info-block">
+            <div className="section-kicker">01 — Sobre o projeto</div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)' }}>Cultura de rua, formação e encontro.</h2>
+            <p className="lead" style={{ marginTop: 14 }}>
+              O festival nasce como uma experiência gratuita de cultura Hip Hop, dança, formação
+              e desenvolvimento social — aberta para quem já vive a cena e para quem está
+              chegando agora.
+            </p>
+            <div className="stats-row">
+              <div className="stat-box"><div className="num">2</div><div className="label">Dias de evento</div></div>
+              <div className="stat-box"><div className="num">8</div><div className="label">Oficinas</div></div>
+              <div className="stat-box"><div className="num">100%</div><div className="label">Gratuito</div></div>
+              <div className="stat-box">
+                <div className="num">{loading ? '—' : Math.max(totalVagas - totalOcupadas, 0)}</div>
+                <div className="label">Vagas disponíveis agora</div>
               </div>
             </div>
-          ))}
-
-          <div style={{ marginTop: 40 }}>
-            <Link to="/oficinas" className="btn-primary">Quero me inscrever</Link>
+          </div>
+          <div className="photo-frame">
+            <div className="placeholder-label">Foto oficial do festival<br />(a inserir)</div>
           </div>
         </div>
       </section>
 
-      <section className="section dark" id="local">
+      {/* 03 — Manifesto visual */}
+      <section className="manifest-section">
         <div className="container">
-          <div className="section-kicker">03 — Local e informações</div>
-          <h2>{settings.location_name}.</h2>
-          <p className="lead">
-            Evento realizado em {settings.location_name} ({settings.location_address}), com apoio da
-            Prefeitura de Sumaré. Estrutura pensada para famílias, iniciantes e artistas da cena.
+          <div className="section-kicker">02 — Conceito</div>
+          <h2>Uma marca<br />cultural própria.</h2>
+          <p className="manifest-text">
+            Rua, movimento, cultura, encontro, formação e território. O Sumaré Hip Hop Festival
+            existe para fortalecer a cena local e abrir acesso à cultura — com força para crescer
+            além de uma única edição.
           </p>
+          <Link to="/sobre" className="link-more">Conheça o projeto completo →</Link>
         </div>
       </section>
 
-      <InstitutionalBar />
+      {/* 04 — Escolha sua oficina */}
+      <section className="section dark" id="oficinas">
+        <div className="container">
+          <div className="section-kicker">03 — Programação</div>
+          <h2>Escolha sua oficina.</h2>
+          <p className="lead">Professor, modalidade e horário — reconheça de cara quem vai te ensinar.</p>
+
+          {loading && <p style={{ marginTop: 20 }}>Carregando oficinas...</p>}
+
+          <div className="preview-grid">
+            {workshops.slice(0, 8).map((w) => (
+              <Link key={w.id} to={`/oficinas?select=${w.id}`} className="preview-card">
+                <div className="preview-photo">
+                  {w.teacher_photo_url ? (
+                    <img src={w.teacher_photo_url} alt={w.teacher} />
+                  ) : (
+                    <span className="placeholder">{w.teacher.charAt(0)}</span>
+                  )}
+                </div>
+                <div className="preview-body">
+                  <div className="preview-name">{w.teacher}</div>
+                  <div className="preview-modality">{w.name}</div>
+                  <div className="preview-meta">{formatDayLong(w.event_day)} · {w.start_time.slice(0, 5)}</div>
+                  <span className="preview-cta">Ver oficina</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 34 }}>
+            <Link to="/oficinas" className="btn-primary">Ver todas as oficinas</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 05 — CTA forte */}
+      <section className="section off">
+        <div className="container" style={{ textAlign: 'center' }}>
+          <h2>Sua vaga é gratuita.<br />Garanta agora.</h2>
+          <p className="lead" style={{ margin: '14px auto 26px' }}>
+            Vagas limitadas por oficina — inscreva-se em quantas quiser, de um único formulário.
+          </p>
+          <Link to="/oficinas" className="btn-primary">Quero me inscrever</Link>
+        </div>
+      </section>
+
+      {/* 06 — Local */}
+      <section className="section dark" id="local">
+        <div className="container">
+          <div className="section-kicker">04 — Local e informações</div>
+          <h2>{settings.location_name}.</h2>
+
+          <div className="local-section" style={{ marginTop: 30 }}>
+            <div>
+              <div className="local-info-list">
+                <div className="row"><span className="label">Endereço</span><span>{settings.location_address}</span></div>
+                <div className="row"><span className="label">Data</span><span>{formatDateRangeShort(settings.event_start_date, settings.event_end_date)}</span></div>
+                <div className="row"><span className="label">Acesso</span><span>Evento aberto ao público, com estrutura para famílias e iniciantes.</span></div>
+              </div>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-secondary"
+                style={{ marginTop: 24, display: 'inline-block' }}
+              >
+                Abrir no Google Maps
+              </a>
+            </div>
+            <div className="map-frame">
+              <iframe
+                src={`https://www.google.com/maps?q=${mapQuery}&output=embed`}
+                loading="lazy"
+                title="Localização do evento"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
 
       <Footer />
     </div>

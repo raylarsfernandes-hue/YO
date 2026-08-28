@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom'
 import { WorkshopSelectionProvider } from './context/WorkshopSelectionContext'
 import Home from './pages/Home'
+import Sobre from './pages/Sobre'
+import Professores from './pages/Professores'
 import Oficinas from './pages/Oficinas'
 import Inscricao from './pages/Inscricao'
 import Confirmacao from './pages/Confirmacao'
@@ -16,6 +18,8 @@ export default function App() {
     <WorkshopSelectionProvider>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/sobre" element={<Sobre />} />
+        <Route path="/professores" element={<Professores />} />
         <Route path="/oficinas" element={<Oficinas />} />
         <Route path="/inscricao" element={<Inscricao />} />
         <Route path="/confirmacao/:batchId" element={<Confirmacao />} />

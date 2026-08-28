@@ -8,8 +8,9 @@ export default function Header() {
           <span>Sumaré<span style={{ color: 'var(--amarelo)' }}> Hip Hop</span> Festival</span>
         </Link>
         <nav>
-          <a href="/#sobre">Sobre</a>
+          <Link to="/sobre">Sobre</Link>
           <Link to="/oficinas">Oficinas</Link>
+          <Link to="/professores">Professores</Link>
           <a href="/#local">Local</a>
           <Link to="/oficinas" className="btn-inscrever">Inscreva-se</Link>
         </nav>

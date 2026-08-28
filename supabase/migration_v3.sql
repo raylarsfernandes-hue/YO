@@ -32,7 +32,11 @@ alter table registrations add column if not exists batch_id uuid;
 create index if not exists idx_registrations_batch on registrations(batch_id);
 
 -- a vaga "ocupada" agora é só quem está confirmed (waitlisted não conta como vaga)
-create or replace view workshops_public as
+-- precisa apagar a view antes: Postgres não deixa inserir colunas no meio de
+-- uma view existente via "create or replace", só no final.
+drop view if exists workshops_public;
+
+create view workshops_public as
 select
   w.id,
   w.name,
