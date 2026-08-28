@@ -155,7 +155,7 @@ button {
 /* ---------- Hero ---------- */
 .hero {
   position: relative;
-  padding: 90px 20px 0;
+  padding: 28px 20px 0;
   background:
     radial-gradient(ellipse at 75% 20%, rgba(163,25,36,0.25), transparent 55%),
     var(--preto);
@@ -166,29 +166,44 @@ button {
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
   gap: 20px;
-  align-items: end;
+  align-items: start;
 }
-.hero-copy { padding-bottom: 60px; }
+.hero-copy { padding-bottom: 32px; }
 .hero-illustration {
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 10px;
   height: 100%;
 }
+.hero-illustration .support-strip-desktop {
+  margin-top: auto;
+  align-self: flex-end;
+}
+.support-strip.support-strip-mobile { display: none; }
 .hero-illustration img {
-  width: 100%;
-  max-width: 460px;
+  width: auto;
+  max-width: 100%;
   height: auto;
+  max-height: 560px;
   display: block;
 }
 .hero-title-img {
   width: 100%;
-  max-width: 480px;
+  max-width: 400px;
   height: auto;
   display: block;
 }
 @media (max-width: 900px) {
-  .hero-title-img { max-width: 340px; }
+  .hero-title-img { max-width: 300px; }
+}
+.sobre-title-img {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  display: block;
+  margin-bottom: 6px;
 }
 .hero-eyebrow {
   color: var(--vermelho);
@@ -203,7 +218,7 @@ button {
   color: var(--amarelo);
 }
 .hero .sub {
-  margin-top: 20px;
+  margin-top: 12px;
   max-width: 560px;
   font-size: 17px;
   line-height: 1.5;
@@ -265,7 +280,9 @@ button {
   .hero .container { grid-template-columns: 1fr; }
   .hero-illustration { order: -1; max-height: 46vh; overflow: hidden; }
   .hero-illustration img { max-width: 320px; }
+  .hero-illustration .support-strip-desktop { display: none; }
   .hero-copy { padding-bottom: 30px; }
+  .support-strip.support-strip-mobile { display: flex; }
 }
 
 /* ---------- Sections ---------- */
@@ -295,9 +312,10 @@ button {
 
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-top: 40px;
+  max-width: 480px;
 }
 .stat-box {
   border: 1px solid var(--borda);
@@ -310,6 +328,8 @@ button {
   font-weight: 700;
   color: var(--amarelo);
 }
+.stat-box.highlight { border-color: var(--vermelho); }
+.stat-box.highlight .num { color: var(--vermelho); }
 .stat-box .label {
   font-size: 12px;
   text-transform: uppercase;

@@ -11,6 +11,7 @@ import { resolveImageUrl } from '../utils/image'
 import heroDancer from '../assets/hero_dancer.webp'
 import heroTitle from '../assets/hero_title.webp'
 import sobreDancer from '../assets/sobre_dancer.webp'
+import sobreTitle from '../assets/sobre_title.webp'
 
 export default function Home() {
   const { settings } = useEventSettings()
@@ -54,10 +55,11 @@ export default function Home() {
               <Link to="/oficinas" className="btn-primary">Fazer inscrição</Link>
               <Link to="/oficinas" className="btn-secondary">Ver oficinas</Link>
             </div>
-            <SupportStrip />
+            <SupportStrip className="support-strip-mobile" />
           </div>
           <div className="hero-illustration">
             <img src={heroDancer} alt="Bailarino em movimento — identidade visual do Sumaré Hip Hop Festival" />
+            <SupportStrip className="support-strip-desktop" />
           </div>
         </div>
       </section>
@@ -67,7 +69,7 @@ export default function Home() {
         <div className="container split-section">
           <div className="info-block">
             <div className="section-kicker">01 — Sobre o projeto</div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)' }}>Cultura de rua, formação e encontro.</h2>
+            <img src={sobreTitle} alt="Cultura de rua, formação e encontro" className="sobre-title-img" />
             <p className="lead" style={{ marginTop: 14 }}>
               O festival nasce como uma experiência gratuita de cultura Hip Hop, dança, formação
               e desenvolvimento social — aberta para quem já vive a cena e para quem está
@@ -77,7 +79,7 @@ export default function Home() {
               <div className="stat-box"><div className="num">2</div><div className="label">Dias de evento</div></div>
               <div className="stat-box"><div className="num">8</div><div className="label">Oficinas</div></div>
               <div className="stat-box"><div className="num">100%</div><div className="label">Gratuito</div></div>
-              <div className="stat-box">
+              <div className="stat-box highlight">
                 <div className="num">{loading ? '—' : Math.max(totalVagas - totalOcupadas, 0)}</div>
                 <div className="label">Vagas disponíveis agora</div>
               </div>
