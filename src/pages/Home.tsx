@@ -34,7 +34,6 @@ export default function Home() {
 
       <section className="hero">
         <div className="container">
-          <div className="hero-eyebrow">Direção criativa / brand board aprovado</div>
           <h1>Sumaré<br />Hip Hop<br />Festival</h1>
           <p className="sub">
             Dois dias de cultura Hip Hop gratuita em Sumaré: oficinas de dança, discotecagem,
@@ -46,7 +45,7 @@ export default function Home() {
             <span className="pill vermelho">100% gratuito</span>
           </div>
           <div className="hero-actions">
-            <Link to="/inscricao" className="btn-primary">Fazer inscrição</Link>
+            <Link to="/oficinas" className="btn-primary">Fazer inscrição</Link>
             <Link to="/oficinas" className="btn-secondary">Ver oficinas</Link>
           </div>
         </div>
@@ -102,7 +101,7 @@ export default function Home() {
           ))}
 
           <div style={{ marginTop: 40 }}>
-            <Link to="/inscricao" className="btn-primary">Quero me inscrever</Link>
+            <Link to="/oficinas" className="btn-primary">Quero me inscrever</Link>
           </div>
         </div>
       </section>

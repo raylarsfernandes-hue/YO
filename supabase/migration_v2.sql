@@ -54,7 +54,14 @@ grant update on event_settings to authenticated;
 -- 3. Atualizar a função de inscrição para receber os novos campos
 --    e calcular automaticamente se a pessoa é menor de idade
 --    NA DATA DO EVENTO (não na data em que se inscreveu).
+--
+--    A assinatura (lista de parâmetros) mudou em relação à versão do
+--    schema.sql original, então "create or replace" NÃO substitui a
+--    função antiga — cria uma segunda, ambígua. Por isso apagamos a
+--    versão antiga explicitamente antes de criar a nova.
 -- ---------------------------------------------------------
+drop function if exists register_for_workshop(uuid, text, text, text, text, text, boolean, boolean);
+
 create or replace function register_for_workshop(
   p_workshop_id uuid,
   p_full_name text,

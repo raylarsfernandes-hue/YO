@@ -244,7 +244,66 @@ variável não refaz o build sozinho.
 12. Em `/admin/configuracoes`, trocar o nome do local e salvar → voltar na
     home e na tela de confirmação e conferir se o texto mudou.
 
-## 14. Segurança — o que já está garantido
+## 14. Inscrição em múltiplas oficinas, vagas e lista de espera (nova versão)
+
+A partir desta atualização, o fluxo mudou de "uma inscrição por oficina" para
+"um participante, várias oficinas, um único formulário":
+
+- Em `/oficinas`, cada card tem um botão de seleção (não navega mais direto).
+  A pessoa pode marcar quantas oficinas quiser, de qualquer dia.
+- Uma barra fixa aparece no rodapé da tela mostrando as oficinas selecionadas,
+  com botão **"Inscrever-se nas selecionadas"**.
+- Em `/inscricao`, o formulário aparece uma única vez. Ao enviar, todas as
+  oficinas selecionadas são registradas de uma vez, vinculadas ao mesmo CPF —
+  não existem mais 3 cadastros separados para 3 oficinas.
+- A tela de confirmação (`/confirmacao/:batchId`, note que a URL mudou de
+  `:code` para `:batchId`) mostra todos os códigos do envio de uma vez.
+
+**Rode `supabase/migration_v3.sql` no SQL Editor do Supabase** (depois do
+`schema.sql` e do `migration_v2.sql`) para habilitar isso — ele muda o limite
+de vagas para 150 por oficina, cria o status de lista de espera e a nova
+função `register_for_workshops` (no plural) que o site agora usa.
+
+### Lista de espera
+
+Quando uma oficina atinge 150 inscrições **confirmadas**, qualquer nova
+tentativa de inscrição nela entra automaticamente como **lista de espera**
+em vez de travar a inscrição inteira — as outras oficinas do mesmo envio que
+ainda tiverem vaga são confirmadas normalmente. A pessoa vê isso claramente
+na tela de confirmação.
+
+No admin (`/admin/inscritos`), inscrições na lista de espera aparecem com a
+etiqueta "Lista de espera" e um botão **"Promover"**, que move a pessoa para
+confirmado assim que surgir vaga (por exemplo, após um cancelamento). O
+filtro de status inclui a opção "Lista de espera".
+
+### Visão por participante
+
+Em `/admin/inscritos`, marque "Agrupar por participante" para ver cada
+pessoa uma única vez, com a lista de todas as oficinas em que ela está
+inscrita (em vez de uma linha por oficina).
+
+### Professores: foto e biografia
+
+Em `/admin/oficinas`, cada oficina agora tem dois campos opcionais: **URL da
+foto do professor** e **biografia/release**. Preenchendo isso, o card da
+oficina mostra a foto (ou as iniciais, se não houver foto) e o botão
+"Conheça o professor" abre um modal com a biografia completa.
+
+## 15. Logos institucionais
+
+A régua oficial de logos (Prefeitura de Sumaré, Secretaria de Cultura e
+Turismo, Sistema Nacional de Cultura, Política Nacional Aldir Blanc e
+Ministério da Cultura) já está aplicada como veio, sem recorte nem
+recoloração, em `src/assets/regua_institucional.webp`. Ela aparece:
+- na Home, em uma seção própria antes do rodapé;
+- no rodapé de todas as páginas públicas (via componente `InstitutionalBar`,
+  usado dentro de `Footer`).
+
+Se a Prefeitura enviar uma versão atualizada da régua, basta substituir esse
+arquivo (mantendo o mesmo nome) e o site inteiro atualiza sozinho.
+
+## 16. Segurança — o que já está garantido
 
 - CPF, telefone e e-mail dos inscritos só são legíveis por administradores
   (RLS bloqueia leitura da tabela `registrations` para qualquer outro

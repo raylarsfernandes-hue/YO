@@ -11,7 +11,7 @@ export default function Header() {
           <a href="/#sobre">Sobre</a>
           <Link to="/oficinas">Oficinas</Link>
           <a href="/#local">Local</a>
-          <Link to="/inscricao" className="btn-inscrever">Inscreva-se</Link>
+          <Link to="/oficinas" className="btn-inscrever">Inscreva-se</Link>
         </nav>
       </div>
     </header>

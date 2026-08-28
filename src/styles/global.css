@@ -50,37 +50,42 @@ button {
 
 /* ---------- Faixa institucional (logos de parceiros) ---------- */
 .institutional-strip {
-  background: var(--branco);
-  color: var(--preto);
-  border-top: 1px solid #d8d4c8;
-  border-bottom: 1px solid #d8d4c8;
-  padding: 22px 20px;
+  background: var(--preto-suave);
+  color: var(--off-white);
+  border-top: 1px solid var(--borda);
+  border-bottom: 1px solid var(--borda);
+  padding: 24px 20px;
 }
 .institutional-strip .container {
   display: flex;
   align-items: center;
-  gap: 26px;
+  gap: 24px;
   flex-wrap: wrap;
   justify-content: center;
 }
 .institutional-strip .label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #6b6a63;
+  color: var(--cinza);
   white-space: nowrap;
 }
-.institutional-strip .logo-slots {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  flex-wrap: wrap;
+.institutional-strip img.regua {
+  height: 34px;
+  width: auto;
+  max-width: 100%;
+}
+@media (max-width: 480px) {
+  .institutional-strip img.regua {
+    height: auto;
+    width: 100%;
+  }
 }
 .logo-slot-placeholder {
   width: 116px;
   height: 44px;
-  border: 1px dashed #c7c3b6;
+  border: 1px dashed var(--borda);
   border-radius: var(--radius);
   display: flex;
   align-items: center;
@@ -88,10 +93,9 @@ button {
   font-size: 9px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #a5a297;
+  color: var(--cinza);
   text-align: center;
   padding: 4px;
-  background: repeating-linear-gradient(45deg, #f2f0e8, #f2f0e8 6px, #ece9df 6px, #ece9df 12px);
 }
 
 /* ---------- Header ---------- */
@@ -284,17 +288,34 @@ button {
 .workshops-grid {
   margin-top: 36px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1000px) {
+  .workshops-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .workshops-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    margin: 20px -16px 0;
+    padding: 4px 16px 10px;
+  }
+  .workshops-grid .workshop-card {
+    min-width: 78vw;
+    scroll-snap-align: start;
+  }
 }
 .workshop-card {
   background: var(--preto-suave);
   border: 1px solid var(--borda);
   border-radius: var(--radius);
-  padding: 22px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   position: relative;
   overflow: hidden;
 }
@@ -304,6 +325,10 @@ button {
   top: 0; left: 0;
   width: 5px; height: 100%;
   background: var(--amarelo);
+}
+.workshop-card.selected {
+  border-color: var(--amarelo);
+  box-shadow: 0 0 0 1px var(--amarelo);
 }
 .workshop-card.esgotada::before,
 .workshop-card.encerrada::before { background: var(--cinza); }
@@ -315,24 +340,57 @@ button {
   color: var(--amarelo);
   font-weight: 700;
 }
+.workshop-card .professor-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.workshop-card .professor-photo {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--preto);
+  border: 1px solid var(--borda);
+  flex-shrink: 0;
+}
+.workshop-card .professor-photo.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--amarelo);
+}
 .workshop-card h3 {
-  font-size: 24px;
+  font-size: 19px;
   color: var(--branco);
+  line-height: 1.05;
 }
 .workshop-card .teacher {
-  font-size: 14px;
-  opacity: 0.75;
+  font-size: 13px;
+  opacity: 0.8;
 }
 .workshop-card .time {
-  font-size: 13px;
-  opacity: 0.6;
+  font-size: 12px;
+  opacity: 0.55;
 }
 .workshop-card .vagas-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 13px;
-  margin-top: 4px;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.workshop-card .btn-professor {
+  background: transparent;
+  border: 1px solid var(--borda);
+  color: var(--off-white);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 7px 10px;
+  border-radius: var(--radius);
 }
 .badge {
   padding: 4px 10px;
@@ -357,22 +415,106 @@ button {
   background: var(--amarelo);
 }
 .workshop-card .cta {
-  margin-top: 6px;
+  margin-top: 4px;
   text-align: center;
-  padding: 12px;
+  padding: 11px;
   border-radius: var(--radius);
   border: none;
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 13px;
-  letter-spacing: 0.04em;
+  font-size: 12px;
+  letter-spacing: 0.03em;
   background: var(--amarelo);
   color: var(--preto);
+}
+.workshop-card .cta.is-selected {
+  background: var(--preto);
+  color: var(--amarelo);
+  border: 1px solid var(--amarelo);
+}
+.workshop-card .cta.waitlist {
+  background: var(--vermelho);
+  color: var(--branco);
 }
 .workshop-card .cta:disabled {
   background: rgba(255,255,255,0.08);
   color: var(--cinza);
   cursor: not-allowed;
+}
+
+/* ---------- Modal do professor ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-box {
+  background: var(--preto-suave);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  max-width: 460px;
+  width: 100%;
+  padding: 28px;
+  position: relative;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-box .modal-close {
+  position: absolute; top: 14px; right: 14px;
+  background: transparent; border: none;
+  color: var(--off-white); font-size: 20px;
+  opacity: 0.6;
+}
+.modal-box .professor-photo-lg {
+  width: 84px; height: 84px; border-radius: 50%;
+  object-fit: cover; margin-bottom: 16px;
+  border: 2px solid var(--amarelo);
+}
+.modal-box .professor-photo-lg.placeholder {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700; color: var(--amarelo);
+  background: var(--preto);
+}
+.modal-box h3 { font-size: 24px; margin-bottom: 4px; }
+.modal-box .modality-tag { color: var(--amarelo); font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 14px; }
+.modal-box p { font-size: 14px; line-height: 1.6; opacity: 0.9; }
+
+/* ---------- Barra fixa de seleção (carrinho de oficinas) ---------- */
+.selection-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  background: var(--amarelo);
+  color: var(--preto);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.4);
+}
+.selection-bar strong { font-family: 'Oswald', sans-serif; text-transform: uppercase; }
+.selection-bar .selection-list {
+  font-size: 12px;
+  opacity: 0.8;
+  max-width: 100%;
+}
+.selection-bar .btn-continue {
+  background: var(--preto);
+  color: var(--amarelo);
+  border: none;
+  padding: 12px 22px;
+  border-radius: var(--radius);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 /* ---------- Forms ---------- */
@@ -582,6 +724,7 @@ button {
 .btn-sm.ok { border-color: var(--amarelo); color: var(--amarelo); }
 .status-tag { font-size: 11px; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; font-weight: 700; }
 .status-tag.confirmed { background: rgba(242,183,5,0.15); color: var(--amarelo); }
+.status-tag.waitlisted { background: rgba(163,25,36,0.2); color: #ff8890; }
 .status-tag.cancelled { background: rgba(138,138,131,0.2); color: var(--cinza); }
 
 @media (max-width: 640px) {

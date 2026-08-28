@@ -5,11 +5,18 @@ import type { RegistrationRow, Workshop, GuardianStatus } from '../../types'
 import { downloadCSV } from '../../utils/csv'
 import { formatDayLong, computeAge, guardianStatusLabel } from '../../utils/format'
 
+const STATUS_LABEL: Record<string, string> = {
+  confirmed: 'Confirmada',
+  waitlisted: 'Lista de espera',
+  cancelled: 'Cancelada',
+}
+
 export default function Inscritos() {
   const { settings } = useEventSettings()
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([])
   const [workshops, setWorkshops] = useState<Workshop[]>([])
   const [loading, setLoading] = useState(true)
+  const [groupByParticipant, setGroupByParticipant] = useState(false)
 
   const [search, setSearch] = useState('')
   const [filterWorkshop, setFilterWorkshop] = useState('')
@@ -57,6 +64,15 @@ export default function Inscritos() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registrations, search, filterWorkshop, filterStatus, filterMinors, settings.event_start_date])
 
+  const participantsGrouped = useMemo(() => {
+    const map = new Map<string, { name: string; cpf: string; email: string; phone: string; rows: RegistrationRow[] }>()
+    filtered.forEach((r) => {
+      if (!map.has(r.cpf)) map.set(r.cpf, { name: r.full_name, cpf: r.cpf, email: r.email, phone: r.phone, rows: [] })
+      map.get(r.cpf)!.rows.push(r)
+    })
+    return Array.from(map.values())
+  }, [filtered])
+
   async function handleCancel(id: string) {
     if (!confirm('Cancelar esta inscrição? A vaga será liberada automaticamente.')) return
     await supabase.rpc('admin_cancel_registration', { p_id: id })
@@ -65,9 +81,13 @@ export default function Inscritos() {
 
   async function handleReactivate(id: string) {
     const { error } = await supabase.rpc('admin_reactivate_registration', { p_id: id })
-    if (error) {
-      alert('Não foi possível reativar: a oficina pode estar esgotada.')
-    }
+    if (error) alert('Não foi possível reativar: a oficina pode estar esgotada.')
+    load()
+  }
+
+  async function handlePromote(id: string) {
+    const { error } = await supabase.rpc('admin_promote_waitlist', { p_id: id })
+    if (error) alert('Não foi possível promover: a oficina já está com todas as vagas confirmadas ocupadas.')
     load()
   }
 
@@ -113,17 +133,23 @@ export default function Inscritos() {
         InscritoEm: new Date(r.created_at).toLocaleString('pt-BR'),
         AceitaComunicacao: r.consent_marketing ? 'Sim' : 'Não',
         CheckIn: r.checked_in ? 'Compareceu' : 'Não compareceu',
-        Status: r.status === 'confirmed' ? 'Confirmada' : 'Cancelada',
+        Status: STATUS_LABEL[r.status] ?? r.status,
       }
     })
   }
 
   if (loading) return <p>Carregando inscritos...</p>
 
+  const totalInscricoes = filtered.filter((r) => r.status !== 'cancelled').length
+  const totalParticipantes = new Set(filtered.filter((r) => r.status !== 'cancelled').map((r) => r.cpf)).size
+
   return (
     <div>
       <h2>Inscritos</h2>
-      <p style={{ opacity: 0.6, fontSize: 14 }}>{filtered.length} de {registrations.length} inscrições</p>
+      <p style={{ opacity: 0.6, fontSize: 14 }}>
+        {totalParticipantes} participantes únicos · {totalInscricoes} inscrições em oficinas
+        {' '}({filtered.length} de {registrations.length} linhas com os filtros atuais)
+      </p>
 
       <div className="toolbar">
         <input
@@ -141,11 +167,16 @@ export default function Inscritos() {
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option value="">Todos os status</option>
           <option value="confirmed">Confirmada</option>
+          <option value="waitlisted">Lista de espera</option>
           <option value="cancelled">Cancelada</option>
         </select>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
           <input type="checkbox" checked={filterMinors} onChange={(e) => setFilterMinors(e.target.checked)} />
           Só menores de idade
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+          <input type="checkbox" checked={groupByParticipant} onChange={(e) => setGroupByParticipant(e.target.checked)} />
+          Agrupar por participante
         </label>
         <button className="btn-sm ok" onClick={exportAll}>Exportar inscrições (CSV)</button>
         {filterWorkshop && (
@@ -153,79 +184,119 @@ export default function Inscritos() {
         )}
       </div>
 
-      <div className="table-wrap">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nome</th>
-              <th>CPF</th>
-              <th>Telefone</th>
-              <th>E-mail</th>
-              <th>Nascimento</th>
-              <th>Idade</th>
-              <th>Autorização resp.</th>
-              <th>Oficina</th>
-              <th>Dia / Horário</th>
-              <th>Status</th>
-              <th>Check-in</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((r) => {
-              const age = ageOf(r)
-              const minor = isMinor(r)
-              return (
-                <tr key={r.id}>
-                  <td>{r.code}</td>
-                  <td>{r.full_name}</td>
-                  <td>{r.cpf}</td>
-                  <td>{r.phone}</td>
-                  <td>{r.email}</td>
-                  <td>{r.birth_date ?? '—'}</td>
-                  <td>{age ?? '—'}{minor && <span className="badge ultimas" style={{ marginLeft: 6 }}>Menor</span>}</td>
+      {groupByParticipant ? (
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr><th>Nome</th><th>CPF</th><th>E-mail</th><th>Oficinas</th></tr>
+            </thead>
+            <tbody>
+              {participantsGrouped.map((p) => (
+                <tr key={p.cpf}>
+                  <td>{p.name}</td>
+                  <td>{p.cpf}</td>
+                  <td>{p.email}</td>
                   <td>
-                    {minor ? (
-                      <select
-                        value={r.guardian_authorization_status}
-                        onChange={(e) => handleGuardianStatus(r.id, e.target.value as GuardianStatus)}
-                        style={{ background: 'var(--preto)', color: 'var(--branco)', border: '1px solid var(--borda)', borderRadius: 4, fontSize: 12, padding: '4px 6px' }}
-                      >
-                        <option value="pendente">Pendente</option>
-                        <option value="confirmada">Confirmada</option>
-                      </select>
-                    ) : (
-                      <span style={{ opacity: 0.5, fontSize: 12 }}>Não necessária</span>
-                    )}
-                  </td>
-                  <td>{r.workshops?.name} — {r.workshops?.teacher}</td>
-                  <td>{r.workshops && formatDayLong(r.workshops.event_day)} · {r.workshops?.start_time}</td>
-                  <td><span className={`status-tag ${r.status}`}>{r.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}</span></td>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={r.checked_in}
-                      onChange={(e) => handleCheckin(r.id, e.target.checked)}
-                      disabled={r.status !== 'confirmed'}
-                    />
-                  </td>
-                  <td>
-                    {r.status === 'confirmed' ? (
-                      <button className="btn-sm danger" onClick={() => handleCancel(r.id)}>Cancelar</button>
-                    ) : (
-                      <button className="btn-sm ok" onClick={() => handleReactivate(r.id)}>Reativar</button>
-                    )}
+                    {p.rows.map((r) => (
+                      <div key={r.id} style={{ marginBottom: 4 }}>
+                        {r.workshops?.name} — {r.workshops?.teacher}{' '}
+                        <span className={`status-tag ${r.status}`}>{STATUS_LABEL[r.status]}</span>
+                      </div>
+                    ))}
                   </td>
                 </tr>
-              )
-            })}
-            {filtered.length === 0 && (
-              <tr><td colSpan={13} style={{ textAlign: 'center', opacity: 0.6, padding: 20 }}>Nenhuma inscrição encontrada.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+              {participantsGrouped.length === 0 && (
+                <tr><td colSpan={4} style={{ textAlign: 'center', opacity: 0.6, padding: 20 }}>Nenhum participante encontrado.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Telefone</th>
+                <th>Nascimento</th>
+                <th>Idade</th>
+                <th>Autorização resp.</th>
+                <th>Oficina</th>
+                <th>Dia / Horário</th>
+                <th>Status</th>
+                <th>Check-in</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => {
+                const age = ageOf(r)
+                const minor = isMinor(r)
+                return (
+                  <tr key={r.id}>
+                    <td>{r.code}</td>
+                    <td>{r.full_name}</td>
+                    <td>{r.cpf}</td>
+                    <td>{r.phone}</td>
+                    <td>{r.birth_date ?? '—'}</td>
+                    <td>{age ?? '—'}{minor && <span className="badge ultimas" style={{ marginLeft: 6 }}>Menor</span>}</td>
+                    <td>
+                      {minor ? (
+                        <select
+                          value={r.guardian_authorization_status}
+                          onChange={(e) => handleGuardianStatus(r.id, e.target.value as GuardianStatus)}
+                          style={{ background: 'var(--preto)', color: 'var(--branco)', border: '1px solid var(--borda)', borderRadius: 4, fontSize: 12, padding: '4px 6px' }}
+                        >
+                          <option value="pendente">Pendente</option>
+                          <option value="confirmada">Confirmada</option>
+                        </select>
+                      ) : (
+                        <span style={{ opacity: 0.5, fontSize: 12 }}>Não necessária</span>
+                      )}
+                    </td>
+                    <td>{r.workshops?.name} — {r.workshops?.teacher}</td>
+                    <td>{r.workshops && formatDayLong(r.workshops.event_day)} · {r.workshops?.start_time}</td>
+                    <td>
+                      <span className={`status-tag ${r.status}`}>{STATUS_LABEL[r.status]}</span>
+                      {r.status === 'waitlisted' && r.waitlist_position && (
+                        <div style={{ fontSize: 11, opacity: 0.6 }}>posição {r.waitlist_position}</div>
+                      )}
+                    </td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={r.checked_in}
+                        onChange={(e) => handleCheckin(r.id, e.target.checked)}
+                        disabled={r.status !== 'confirmed'}
+                      />
+                    </td>
+                    <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {r.status === 'confirmed' && (
+                        <button className="btn-sm danger" onClick={() => handleCancel(r.id)}>Cancelar</button>
+                      )}
+                      {r.status === 'waitlisted' && (
+                        <>
+                          <button className="btn-sm ok" onClick={() => handlePromote(r.id)}>Promover</button>
+                          <button className="btn-sm danger" onClick={() => handleCancel(r.id)}>Cancelar</button>
+                        </>
+                      )}
+                      {r.status === 'cancelled' && (
+                        <button className="btn-sm ok" onClick={() => handleReactivate(r.id)}>Reativar</button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+              {filtered.length === 0 && (
+                <tr><td colSpan={12} style={{ textAlign: 'center', opacity: 0.6, padding: 20 }}>Nenhuma inscrição encontrada.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

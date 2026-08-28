@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useEventSettings } from '../hooks/useEventSettings'
+import { useWorkshopSelection } from '../context/WorkshopSelectionContext'
 import type { WorkshopPublic } from '../types'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
@@ -11,6 +12,7 @@ import { formatDayLong } from '../utils/format'
 export default function Oficinas() {
   const navigate = useNavigate()
   const { settings } = useEventSettings()
+  const { selected, toggle, isSelected, remove } = useWorkshopSelection()
   const [workshops, setWorkshops] = useState<WorkshopPublic[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -25,14 +27,10 @@ export default function Oficinas() {
       })
   }, [])
 
-  function handleSelect(w: WorkshopPublic) {
-    navigate(`/inscricao?workshop=${w.id}`)
-  }
-
   const dias = Array.from(new Set(workshops.map((w) => w.event_day))).sort()
 
   return (
-    <div>
+    <div style={{ paddingBottom: selected.length > 0 ? 0 : undefined }}>
       <Header />
 
       <section className="section dark" style={{ paddingBottom: 20 }}>
@@ -40,13 +38,13 @@ export default function Oficinas() {
           <div className="section-kicker">Programação</div>
           <h2>Oficinas disponíveis.</h2>
           <p className="lead">
-            Todas as oficinas do Sumaré Hip Hop Festival, com vagas atualizadas em tempo real.
-            Escolha a sua e garanta seu lugar — é gratuito.
+            Selecione quantas oficinas quiser — de um dia ou dos dois — e faça uma única
+            inscrição no final. Local: {settings.location_name}.
           </p>
         </div>
       </section>
 
-      <section className="section dark" style={{ paddingTop: 0 }}>
+      <section className="section dark" style={{ paddingTop: 0, paddingBottom: 40 }}>
         <div className="container">
           {loading && <p>Carregando oficinas...</p>}
           {!loading && workshops.length === 0 && (
@@ -59,13 +57,39 @@ export default function Oficinas() {
               </h3>
               <div className="workshops-grid">
                 {workshops.filter((w) => w.event_day === dia).map((w) => (
-                  <WorkshopCard key={w.id} workshop={w} onSelect={handleSelect} location={settings.location_name} />
+                  <WorkshopCard key={w.id} workshop={w} selected={isSelected(w.id)} onToggle={toggle} />
                 ))}
               </div>
             </div>
           ))}
         </div>
       </section>
+
+      {selected.length > 0 && (
+        <div className="selection-bar">
+          <div>
+            <strong>{selected.length} oficina{selected.length > 1 ? 's' : ''} selecionada{selected.length > 1 ? 's' : ''}</strong>
+            <div className="selection-list">
+              {selected.map((w) => (
+                <span key={w.id} style={{ marginRight: 10 }}>
+                  {w.name} ({w.teacher})
+                  <button
+                    type="button"
+                    onClick={() => remove(w.id)}
+                    style={{ background: 'none', border: 'none', marginLeft: 4, cursor: 'pointer', color: 'inherit', opacity: 0.7 }}
+                    aria-label={`Remover ${w.name}`}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+          <button type="button" className="btn-continue" onClick={() => navigate('/inscricao')}>
+            Inscrever-se nas selecionadas →
+          </button>
+        </div>
+      )}
 
       <Footer />
     </div>

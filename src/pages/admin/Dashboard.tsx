@@ -24,8 +24,9 @@ export default function Dashboard() {
   useEffect(() => { load() }, [])
 
   const confirmed = registrations.filter((r) => r.status === 'confirmed')
+  const waitlisted = registrations.filter((r) => r.status === 'waitlisted')
   const totalInscricoes = confirmed.length
-  const pessoasUnicas = new Set(confirmed.map((r) => r.cpf)).size
+  const pessoasUnicas = new Set(confirmed.concat(waitlisted).map((r) => r.cpf)).size
   const totalVagas = workshops.reduce((acc, w) => acc + w.max_vagas, 0)
   const vagasPreenchidas = workshops.reduce((acc, w) => acc + w.taken, 0)
   const ocupacao = totalVagas > 0 ? Math.round((vagasPreenchidas / totalVagas) * 100) : 0
@@ -55,20 +56,20 @@ export default function Dashboard() {
 
       <div className="grid-4">
         <div className="card">
-          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{totalInscricoes}</div>
-          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Total de inscrições</div>
+          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{pessoasUnicas}</div>
+          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Participantes únicos</div>
         </div>
         <div className="card">
-          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{pessoasUnicas}</div>
-          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Pessoas únicas</div>
+          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{totalInscricoes}</div>
+          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Inscrições em oficinas</div>
         </div>
         <div className="card">
           <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{vagasPreenchidas}/{totalVagas}</div>
-          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Vagas ocupadas</div>
+          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Vagas ocupadas ({ocupacao}%)</div>
         </div>
         <div className="card">
-          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{ocupacao}%</div>
-          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Ocupação geral</div>
+          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--vermelho)', fontFamily: 'Oswald' }}>{waitlisted.length}</div>
+          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Na lista de espera</div>
         </div>
         <div className="card">
           <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--vermelho)', fontFamily: 'Oswald' }}>{menores.length}</div>
@@ -116,7 +117,7 @@ export default function Dashboard() {
       </div>
 
       <h3 style={{ fontSize: 16, margin: '28px 0 14px' }}>Ocupação por oficina</h3>
-      <div className="workshops-grid" style={{ marginTop: 0 }}>
+      <div className="grid-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
         {workshops.map((w) => {
           const pct = Math.round((w.taken / Math.max(w.max_vagas, 1)) * 100)
           return (
@@ -125,9 +126,12 @@ export default function Dashboard() {
               <div style={{ fontSize: 18, fontWeight: 700, margin: '4px 0' }}>{w.name} — {w.teacher}</div>
               <div className="progress-bar" style={{ margin: '10px 0' }}><div style={{ width: `${pct}%` }} /></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span>{w.taken} / {w.max_vagas} vagas · {pct}% ocupado</span>
+                <span>{w.taken} / {w.max_vagas} vagas · {pct}%</span>
                 <span className={`badge ${w.status}`}>{statusLabel(w.status)}</span>
               </div>
+              {w.waiting > 0 && (
+                <div style={{ fontSize: 12, color: 'var(--vermelho)', marginTop: 6 }}>{w.waiting} na lista de espera</div>
+              )}
             </div>
           )
         })}
