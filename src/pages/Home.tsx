@@ -7,6 +7,10 @@ import Footer from '../components/Footer'
 import SupportStrip from '../components/SupportStrip'
 import { useEventSettings } from '../hooks/useEventSettings'
 import { formatDayLong, formatDateRangeShort } from '../utils/format'
+import { resolveImageUrl } from '../utils/image'
+import heroDancer from '../assets/hero_dancer.webp'
+import heroTitle from '../assets/hero_title.webp'
+import sobreDancer from '../assets/sobre_dancer.webp'
 
 export default function Home() {
   const { settings } = useEventSettings()
@@ -35,26 +39,31 @@ export default function Home() {
       {/* 01 — Abertura */}
       <section className="hero">
         <div className="container">
-          <h1>Sumaré<br />Hip Hop<br />Festival</h1>
-          <p className="sub">
-            Dois dias de cultura Hip Hop gratuita em Sumaré: oficinas de dança, discotecagem,
-            encontro e formação para quem já vive a cena e para quem está chegando agora.
-          </p>
-          <div className="hero-meta">
-            <span className="pill amarelo">{formatDateRangeShort(settings.event_start_date, settings.event_end_date)}</span>
-            <span className="pill">{settings.location_name}</span>
-            <span className="pill vermelho">100% gratuito</span>
+          <div className="hero-copy">
+            <img src={heroTitle} alt="Sumaré Hip Hop Festival" className="hero-title-img" />
+            <p className="sub">
+              Dois dias de cultura Hip Hop gratuita em Sumaré: oficinas de dança, discotecagem,
+              encontro e formação para quem já vive a cena e para quem está chegando agora.
+            </p>
+            <div className="hero-meta">
+              <span className="pill amarelo">{formatDateRangeShort(settings.event_start_date, settings.event_end_date)}</span>
+              <span className="pill">{settings.location_name}</span>
+              <span className="pill vermelho">100% gratuito</span>
+            </div>
+            <div className="hero-actions">
+              <Link to="/oficinas" className="btn-primary">Fazer inscrição</Link>
+              <Link to="/oficinas" className="btn-secondary">Ver oficinas</Link>
+            </div>
+            <SupportStrip />
           </div>
-          <div className="hero-actions">
-            <Link to="/oficinas" className="btn-primary">Fazer inscrição</Link>
-            <Link to="/oficinas" className="btn-secondary">Ver oficinas</Link>
+          <div className="hero-illustration">
+            <img src={heroDancer} alt="Bailarino em movimento — identidade visual do Sumaré Hip Hop Festival" />
           </div>
-          <SupportStrip />
         </div>
       </section>
 
       {/* 02 — Informações + fotografia */}
-      <section className="section dark">
+      <section className="section off">
         <div className="container split-section">
           <div className="info-block">
             <div className="section-kicker">01 — Sobre o projeto</div>
@@ -74,8 +83,8 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div className="photo-frame">
-            <div className="placeholder-label">Foto oficial do festival<br />(a inserir)</div>
+          <div className="photo-frame photo-frame--image">
+            <img src={sobreDancer} alt="Cultura, dança, resistência, formação, comunidade" />
           </div>
         </div>
       </section>
@@ -108,7 +117,7 @@ export default function Home() {
               <Link key={w.id} to={`/oficinas?select=${w.id}`} className="preview-card">
                 <div className="preview-photo">
                   {w.teacher_photo_url ? (
-                    <img src={w.teacher_photo_url} alt={w.teacher} />
+                    <img src={resolveImageUrl(w.teacher_photo_url)!} alt={w.teacher} />
                   ) : (
                     <span className="placeholder">{w.teacher.charAt(0)}</span>
                   )}

@@ -1,4 +1,5 @@
 import type { WorkshopPublic } from '../types'
+import { resolveImageUrl } from '../utils/image'
 
 interface Props {
   workshop: WorkshopPublic
@@ -12,7 +13,7 @@ export default function ProfessorModal({ workshop, onClose }: Props) {
         <button className="modal-close" onClick={onClose} aria-label="Fechar">✕</button>
 
         {workshop.teacher_photo_url ? (
-          <img src={workshop.teacher_photo_url} alt={workshop.teacher} className="professor-photo-lg" />
+          <img src={resolveImageUrl(workshop.teacher_photo_url)!} alt={workshop.teacher} className="professor-photo-lg" />
         ) : (
           <div className="professor-photo-lg placeholder">{workshop.teacher.charAt(0)}</div>
         )}

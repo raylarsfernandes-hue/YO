@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { WorkshopPublic } from '../types'
 import { statusLabel } from '../utils/format'
+import { resolveImageUrl } from '../utils/image'
 import ProfessorModal from './ProfessorModal'
 
 interface Props {
@@ -21,7 +22,7 @@ export default function WorkshopCard({ workshop: w, selected, onToggle }: Props)
 
       <div className="professor-row">
         {w.teacher_photo_url ? (
-          <img src={w.teacher_photo_url} alt={w.teacher} className="professor-photo" />
+          <img src={resolveImageUrl(w.teacher_photo_url)!} alt={w.teacher} className="professor-photo" />
         ) : (
           <div className="professor-photo placeholder">{w.teacher.charAt(0)}</div>
         )}

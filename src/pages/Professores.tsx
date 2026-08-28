@@ -5,6 +5,7 @@ import type { WorkshopPublic } from '../types'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import ProfessorModal from '../components/ProfessorModal'
+import { resolveImageUrl } from '../utils/image'
 
 interface ProfessorEntry {
   teacher: string
@@ -65,7 +66,7 @@ export default function Professores() {
             {professores.map((p) => (
               <div key={p.teacher} className="professor-card">
                 <div className="photo">
-                  {p.photo ? <img src={p.photo} alt={p.teacher} /> : <span className="placeholder">{p.teacher.charAt(0)}</span>}
+                  {p.photo ? <img src={resolveImageUrl(p.photo)!} alt={p.teacher} /> : <span className="placeholder">{p.teacher.charAt(0)}</span>}
                 </div>
                 <div className="body">
                   <h3>{p.teacher}</h3>

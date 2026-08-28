@@ -98,6 +98,10 @@ export default function Oficinas() {
               onChange={(e) => setForm({ ...form, teacher_photo_url: e.target.value || null })}
               placeholder="https://..."
             />
+            <p style={{ fontSize: 12, opacity: 0.6, marginTop: 6 }}>
+              Pode colar o link normal de compartilhamento do Google Drive (o site converte
+              automaticamente). Lembre de deixar o arquivo com acesso "Qualquer pessoa com o link".
+            </p>
           </div>
           <div className="field">
             <label>Biografia / release do professor (opcional)</label>
