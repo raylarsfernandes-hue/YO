@@ -1,0 +1,271 @@
+<title>Mockup inscrição K-Pop Fest</title>
+<style>
+  /* layout: coluna única, cartão de formulário centralizado com trilha de etapas no topo,
+     igual à estrutura real do site (Section tom="night" + steps bar + card de integrante) */
+  :root{
+    --bg:#0c0a1f; --bg-soft:#151230; --card:#1b1740; --border:rgba(248,247,255,0.14);
+    --fg:#f8f7ff; --fg-dim:rgba(248,247,255,0.68); --fg-faint:rgba(248,247,255,0.45);
+    --pink:#ff3d9a; --purple:#9b5cff; --cyan:#00d6f9;
+    --display:"Space Grotesk",Inter,system-ui,sans-serif;
+    --body:"Inter",system-ui,sans-serif;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:
+      radial-gradient(ellipse 700px 420px at 15% -8%, rgba(155,92,255,0.35), transparent 60%),
+      radial-gradient(ellipse 600px 380px at 105% 10%, rgba(0,214,249,0.18), transparent 60%),
+      var(--bg);
+    color:var(--fg); font-family:var(--body); padding-inline:16px; padding-block:40px;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0}
+  .wrap{max-width:640px; margin:0 auto}
+
+  .kicker{
+    display:inline-flex; align-items:center; gap:8px; font-size:12px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--cyan); font-weight:600;
+  }
+  .kicker::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+  .titulo-pagina{font-size:clamp(22px,4vw,30px); margin-top:14px; line-height:1.15}
+  .sub{color:var(--fg-dim); font-size:14px; margin-top:10px; max-width:52ch; line-height:1.55}
+
+  .aviso{
+    margin-top:20px; padding:12px 14px; border-radius:10px; font-size:12.5px; line-height:1.5;
+    background:rgba(0,214,249,0.08); border:1px solid rgba(0,214,249,0.25); color:var(--fg-dim);
+  }
+  .aviso strong{color:var(--cyan)}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:24px; margin-top:24px;
+  }
+
+  .trilha{display:flex; gap:6px; margin-bottom:22px}
+  .trilha .seg{flex:1; height:4px; border-radius:4px; background:rgba(248,247,255,0.14); transition:background .2s}
+  .trilha .seg.ativo{background:linear-gradient(90deg,var(--pink),var(--purple))}
+  .etapas-label{display:flex; justify-content:space-between; font-size:10.5px; color:var(--fg-faint); margin-bottom:8px; letter-spacing:.02em}
+  .etapas-label span{flex:1; text-align:center}
+  .etapas-label span:first-child{text-align:left}
+  .etapas-label span:last-child{text-align:right}
+  .etapas-label span.atual{color:var(--fg); font-weight:600}
+
+  .etapa-titulo{font-size:19px; margin-bottom:4px}
+  .etapa-desc{font-size:12.5px; color:var(--fg-faint); margin-bottom:18px}
+
+  .campo{display:grid; gap:6px; margin-bottom:16px; font-size:12.5px; color:var(--fg-dim)}
+  .campo label{font-weight:600; color:var(--fg)}
+  input[type=text], input[type=email], input[type=date], select, textarea{
+    background:rgba(248,247,255,0.06); border:1px solid var(--border); border-radius:8px;
+    padding:10px 12px; color:var(--fg); font-family:var(--body); font-size:13.5px; width:100%;
+  }
+  input:focus, select:focus, textarea:focus{outline:2px solid var(--cyan); outline-offset:1px; border-color:var(--cyan)}
+  .linha2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  @media (max-width:420px){.linha2{grid-template-columns:1fr}}
+
+  /* seletor de categoria — o coração do mockup */
+  .categorias{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:18px}
+  @media (max-width:480px){.categorias{grid-template-columns:repeat(2,1fr)}}
+  .cat-btn{
+    background:rgba(248,247,255,0.04); border:1px solid var(--border); border-radius:10px;
+    padding:12px 8px; text-align:center; cursor:pointer; transition:.15s; color:var(--fg-dim);
+  }
+  .cat-btn strong{display:block; font-size:13.5px; color:var(--fg); font-family:var(--display)}
+  .cat-btn small{display:block; font-size:10.5px; margin-top:3px; color:var(--fg-faint)}
+  .cat-btn:hover{border-color:var(--fg-faint)}
+  .cat-btn.sel{border-color:var(--pink); background:rgba(255,61,154,0.1); box-shadow:0 0 0 1px var(--pink) inset}
+  .cat-btn.sel strong{color:var(--pink)}
+
+  .integrante{
+    background:rgba(248,247,255,0.035); border:1px solid var(--border); border-radius:10px;
+    padding:14px; margin-bottom:10px;
+  }
+  .integrante-topo{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px}
+  .integrante-topo strong{font-size:13px; font-family:var(--display)}
+  .idade-pill{font-size:10.5px; padding:2px 8px; border-radius:20px; background:rgba(0,214,249,0.12); color:var(--cyan); display:none}
+  .integrante-campos{display:grid; gap:8px}
+  .chk{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--fg-dim)}
+  .chk input{accent-color:var(--pink)}
+  .diferenciador{
+    font-size:11px; color:var(--purple); background:rgba(155,92,255,0.1); border:1px dashed rgba(155,92,255,0.4);
+    padding:6px 8px; border-radius:6px; margin-top:6px; display:none; align-items:center; gap:6px;
+  }
+  .diferenciador.on{display:flex}
+
+  .regras{
+    margin-top:16px; padding:12px 14px; border-radius:10px; font-size:12px; line-height:1.6;
+    background:rgba(248,247,255,0.03); border:1px solid var(--border); color:var(--fg-dim);
+  }
+  .regras b{color:var(--fg)}
+
+  .acoes{display:flex; gap:10px; margin-top:24px}
+  .btn{
+    font-family:var(--body); font-weight:600; font-size:13.5px; padding:11px 20px; border-radius:999px;
+    border:1px solid transparent; cursor:pointer; transition:.15s;
+  }
+  .btn-primario{background:linear-gradient(90deg,var(--pink),var(--purple)); color:#fff}
+  .btn-primario:hover{filter:brightness(1.08)}
+  .btn-outline{background:transparent; border-color:var(--border); color:var(--fg-dim)}
+  .btn-outline:hover{border-color:var(--fg-faint); color:var(--fg)}
+
+  .legenda-rodape{margin-top:28px; font-size:11.5px; color:var(--fg-faint); text-align:center; line-height:1.6}
+  .legenda-rodape a{color:var(--cyan)}
+
+  [hidden]{display:none!important}
+</style>
+
+<div class="wrap">
+  <span class="kicker">Mockup · não é o formulário em produção</span>
+  <h1 class="titulo-pagina">Inscrição na competição — protótipo visual</h1>
+  <p class="sub">
+    Mesma estrutura de 4 etapas do formulário real (<code>InscricaoCompeticao.tsx</code>), com foco
+    no ponto que você pediu: como os campos mudam entre Solo, Duo, Trio e Grupo. Clique nas
+    categorias abaixo para ver a diferença ao vivo.
+  </p>
+
+  <div class="aviso">
+    <strong>Isso é um mockup clicável</strong>, sem conexão com o banco — serve para você revisar o
+    layout e a lógica de campos condicionais antes da abertura. O formulário de verdade (que grava
+    no Supabase, controla vagas e envia e-mail) é o que já está no projeto.
+  </div>
+
+  <div class="card">
+    <div class="etapas-label">
+      <span class="atual">Responsável</span>
+      <span>Categoria e integrantes</span>
+      <span>Apresentação</span>
+      <span>Revisão e envio</span>
+    </div>
+    <div class="trilha">
+      <div class="seg ativo"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div>
+    </div>
+
+    <h2 class="etapa-titulo">Categoria e integrantes</h2>
+    <p class="etapa-desc">Escolha a categoria: o número de integrantes e os campos disponíveis se ajustam sozinhos.</p>
+
+    <div class="categorias" id="categorias">
+      <div class="cat-btn" data-cat="solo" data-min="1" data-max="1"><strong>Solo</strong><small>1 participante</small></div>
+      <div class="cat-btn" data-cat="duo" data-min="2" data-max="2"><strong>Duo</strong><small>2 participantes</small></div>
+      <div class="cat-btn" data-cat="trio" data-min="3" data-max="3"><strong>Trio</strong><small>3 participantes</small></div>
+      <div class="cat-btn sel" data-cat="grupo" data-min="4" data-max="9"><strong>Grupo</strong><small>4 a 9 participantes</small></div>
+    </div>
+
+    <div class="campo">
+      <label>Nome artístico ou do grupo</label>
+      <input type="text" value="Neon Yolanda" />
+    </div>
+    <div class="linha2">
+      <div class="campo"><label>Cidade</label><input type="text" value="Sumaré" /></div>
+      <div class="campo"><label>UF</label><input type="text" value="SP" maxlength="2" /></div>
+    </div>
+
+    <div class="campo" id="qtd-campo" hidden>
+      <label>Número de integrantes</label>
+      <select id="qtd-select"></select>
+    </div>
+
+    <div id="lista-integrantes"></div>
+
+    <div class="diferenciador" id="diferenciador-backdancer">
+      💡 Só aparece para <b>Grupo</b>: campo "É back-dancer" em cada integrante — o regulamento conta back-dancers como integrantes do grupo.
+    </div>
+
+    <div class="regras" id="regra-tempo">
+      <b>Tempo de apresentação (regulamento):</b> <span id="regra-tempo-texto">Grupos: 2min a 4min, tolerância de 5s.</span>
+    </div>
+
+    <div class="acoes">
+      <button class="btn btn-outline" disabled>Voltar</button>
+      <button class="btn btn-primario">Continuar</button>
+    </div>
+  </div>
+
+  <p class="legenda-rodape">
+    Layout, cores e tipografia iguais ao site (fundo escuro, gradiente rosa → roxo, destaque ciano).
+    As próximas etapas (Apresentação, Revisão e envio) seguem o mesmo padrão visual, já em produção
+    no formulário real.
+  </p>
+</div>
+
+<script>
+(function(){
+  var categorias = document.querySelectorAll('.cat-btn');
+  var qtdCampo = document.getElementById('qtd-campo');
+  var qtdSelect = document.getElementById('qtd-select');
+  var lista = document.getElementById('lista-integrantes');
+  var diferenciador = document.getElementById('diferenciador-backdancer');
+  var regraTexto = document.getElementById('regra-tempo-texto');
+
+  var tempos = {
+    solo: 'Solo/duo/trio: 1min30s a 3min, tolerância de 5s.',
+    duo: 'Solo/duo/trio: 1min30s a 3min, tolerância de 5s.',
+    trio: 'Solo/duo/trio: 1min30s a 3min, tolerância de 5s.',
+    grupo: 'Grupos: 2min a 4min, tolerância de 5s.'
+  };
+
+  var idadesExemplo = [17, 22, 15, 19, 24, 16, 21, 18, 20];
+
+  function renderIntegrantes(qtd, categoria){
+    lista.innerHTML = '';
+    for (var i = 0; i < qtd; i++){
+      var idade = idadesExemplo[i];
+      var menor = idade < 18;
+      var div = document.createElement('div');
+      div.className = 'integrante';
+      div.innerHTML =
+        '<div class="integrante-topo">' +
+          '<strong>Integrante ' + (i+1) + '</strong>' +
+          '<span class="idade-pill" style="display:inline-block">' + idade + ' anos</span>' +
+        '</div>' +
+        '<div class="integrante-campos">' +
+          '<input type="text" placeholder="Nome completo" value="Exemplo Integrante ' + (i+1) + '" />' +
+          '<input type="date" value="2008-0' + ((i%9)+1) + '-12" />' +
+          (categoria === 'grupo'
+            ? '<label class="chk"><input type="checkbox" ' + (i===0?'checked':'') + ' /> É back-dancer</label>'
+            : '') +
+          (menor
+            ? '<div class="diferenciador on" style="margin-top:2px">📎 Menor de idade: termo é conferido fisicamente no credenciamento, não aqui.</div>'
+            : '')
+        + '</div>';
+      lista.appendChild(div);
+    }
+  }
+
+  function selecionar(cat){
+    categorias.forEach(function(c){ c.classList.toggle('sel', c === cat); });
+    var min = parseInt(cat.dataset.min, 10);
+    var max = parseInt(cat.dataset.max, 10);
+    var nome = cat.dataset.cat;
+
+    regraTexto.textContent = tempos[nome];
+
+    if (min === max){
+      qtdCampo.hidden = true;
+      renderIntegrantes(min, nome);
+    } else {
+      qtdCampo.hidden = false;
+      qtdSelect.innerHTML = '';
+      for (var n = min; n <= max; n++){
+        var opt = document.createElement('option');
+        opt.value = n; opt.textContent = n;
+        if (n === min) opt.selected = true;
+        qtdSelect.appendChild(opt);
+      }
+      renderIntegrantes(min, nome);
+    }
+
+    diferenciador.classList.toggle('on', nome === 'grupo');
+  }
+
+  categorias.forEach(function(c){
+    c.addEventListener('click', function(){ selecionar(c); });
+  });
+  qtdSelect.addEventListener('change', function(){
+    var catAtual = document.querySelector('.cat-btn.sel').dataset.cat;
+    renderIntegrantes(parseInt(qtdSelect.value, 10), catAtual);
+  });
+
+  // estado inicial: Grupo, 4 integrantes
+  selecionar(document.querySelector('.cat-btn[data-cat="grupo"]'));
+})();
+</script>
