@@ -1,51 +1,27 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
-import type { WorkshopPublic } from '../types'
+import type { Teacher } from '../types'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import ProfessorModal from '../components/ProfessorModal'
 import { resolveImageUrl } from '../utils/image'
 
-interface ProfessorEntry {
-  teacher: string
-  photo: string | null
-  bio: string | null
-  modalities: string[]
-  representative: WorkshopPublic
-}
-
 export default function Professores() {
-  const [workshops, setWorkshops] = useState<WorkshopPublic[]>([])
+  const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
-  const [openProfessor, setOpenProfessor] = useState<WorkshopPublic | null>(null)
+  const [open, setOpen] = useState<Teacher | null>(null)
 
   useEffect(() => {
     supabase
-      .from('workshops_public')
+      .from('teachers')
       .select('*')
       .order('order_index', { ascending: true })
       .then(({ data }) => {
-        setWorkshops((data ?? []) as WorkshopPublic[])
+        setTeachers((data ?? []) as Teacher[])
         setLoading(false)
       })
   }, [])
-
-  const professores: ProfessorEntry[] = []
-  workshops.forEach((w) => {
-    const existing = professores.find((p) => p.teacher === w.teacher)
-    if (existing) {
-      existing.modalities.push(w.name)
-    } else {
-      professores.push({
-        teacher: w.teacher,
-        photo: w.teacher_photo_url,
-        bio: w.teacher_bio,
-        modalities: [w.name],
-        representative: w,
-      })
-    }
-  })
 
   return (
     <div>
@@ -53,30 +29,32 @@ export default function Professores() {
 
       <section className="section dark">
         <div className="container">
-          <div className="section-kicker">Quem ensina</div>
+          <div className="section-kicker">Quem participa</div>
           <h2>Professores.</h2>
           <p className="lead">
-            Profissionais que vivem a cena todos os dias — conheça quem vai ministrar cada
-            oficina do festival.
+            Profissionais que vivem a cena todos os dias e foram convidados para o encontro.
           </p>
 
           {loading && <p style={{ marginTop: 20 }}>Carregando...</p>}
+          {!loading && teachers.length === 0 && (
+            <p style={{ marginTop: 20, opacity: 0.7 }}>Os professores serão divulgados em breve.</p>
+          )}
 
           <div className="professores-grid">
-            {professores.map((p) => (
-              <div key={p.teacher} className="professor-card">
+            {teachers.map((t) => (
+              <div key={t.id} className="professor-card">
                 <div className="photo">
-                  {p.photo ? <img src={resolveImageUrl(p.photo)!} alt={p.teacher} /> : <span className="placeholder">{p.teacher.charAt(0)}</span>}
+                  {t.photo_url ? <img src={resolveImageUrl(t.photo_url)!} alt={t.name} /> : <span className="placeholder">{t.name.charAt(0)}</span>}
                 </div>
                 <div className="body">
-                  <h3>{p.teacher}</h3>
-                  <div className="modality">{p.modalities.join(' · ')}</div>
+                  <h3>{t.name}</h3>
+                  {t.modality && <div className="modality">{t.modality}</div>}
                   <p className="intro">
-                    {p.bio
-                      ? p.bio.slice(0, 90) + (p.bio.length > 90 ? '…' : '')
-                      : 'Release completo em breve.'}
+                    {t.bio
+                      ? t.bio.slice(0, 90) + (t.bio.length > 90 ? '…' : '')
+                      : 'Apresentação completa em breve.'}
                   </p>
-                  <button type="button" className="btn-professor" style={{ width: '100%' }} onClick={() => setOpenProfessor(p.representative)}>
+                  <button type="button" className="btn-professor" style={{ width: '100%' }} onClick={() => setOpen(t)}>
                     Conheça
                   </button>
                 </div>
@@ -84,13 +62,14 @@ export default function Professores() {
             ))}
           </div>
 
-          <div style={{ marginTop: 34 }}>
-            <Link to="/oficinas" className="btn-primary">Ver oficinas</Link>
+          <div style={{ marginTop: 34, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+            <Link to="/programacao" className="btn-secondary">Ver programação</Link>
+            <Link to="/inscricao" className="btn-primary">Fazer inscrição</Link>
           </div>
         </div>
       </section>
 
-      {openProfessor && <ProfessorModal workshop={openProfessor} onClose={() => setOpenProfessor(null)} />}
+      {open && <ProfessorModal teacher={open} onClose={() => setOpen(null)} />}
 
       <Footer />
     </div>

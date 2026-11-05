@@ -8,7 +8,7 @@ export default function Footer() {
       <InstitutionalBar />
       <footer className="site-footer">
         <div className="container">
-          Sumaré Hip Hop Festival — {settings.location_name}, {settings.location_address}.
+          Encontro de Danças Urbanas de Sumaré — {settings.location_name}, {settings.location_address}.
           <br />
           Evento cultural gratuito, realizado em parceria com a Prefeitura de Sumaré.
         </div>

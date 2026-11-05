@@ -30,8 +30,8 @@ export default function Configuracoes() {
     <div>
       <h2>Configurações do evento</h2>
       <p style={{ opacity: 0.6, fontSize: 14, marginBottom: 20 }}>
-        Local, datas e o link do PDF de autorização de menores ficam centralizados aqui — mudar
-        aqui reflete automaticamente no site, no formulário e na tela de confirmação.
+        Local, datas, limite de vagas por dia e o link do PDF de autorização de menores ficam
+        centralizados aqui. Mudar aqui reflete automaticamente no site, no formulário e na tela de confirmação.
       </p>
 
       <div className="card" style={{ maxWidth: 520 }}>
@@ -40,8 +40,21 @@ export default function Configuracoes() {
           <input type="text" value={form.location_name} onChange={(e) => setForm({ ...form, location_name: e.target.value })} />
         </div>
         <div className="field">
-          <label>Endereço / cidade</label>
+          <label>Endereço completo</label>
           <input type="text" value={form.location_address} onChange={(e) => setForm({ ...form, location_address: e.target.value })} />
+        </div>
+        <div className="field">
+          <label>Busca do Google Maps (mapa e botão "Como chegar")</label>
+          <input
+            type="text"
+            value={form.map_query ?? ''}
+            onChange={(e) => setForm({ ...form, map_query: e.target.value || null })}
+            placeholder="Nome do local, rua, número, bairro, cidade"
+          />
+          <p style={{ fontSize: 12, opacity: 0.6, marginTop: 6 }}>
+            Texto usado para achar o local no mapa. Se o pin sair no lugar errado, ajuste aqui
+            (nome do local + rua + número + cidade costuma funcionar melhor).
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <div className="field" style={{ flex: 1 }}>
@@ -53,6 +66,21 @@ export default function Configuracoes() {
             <input type="date" value={form.event_end_date} onChange={(e) => setForm({ ...form, event_end_date: e.target.value })} />
           </div>
         </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div className="field" style={{ flex: 1 }}>
+            <label>Limite de vagas: dia {form.event_start_date.split('-').reverse().slice(0, 2).join('/')}</label>
+            <input type="text" inputMode="numeric" value={form.max_vagas_dia1}
+              onChange={(e) => setForm({ ...form, max_vagas_dia1: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
+          </div>
+          <div className="field" style={{ flex: 1 }}>
+            <label>Limite de vagas: dia {form.event_end_date.split('-').reverse().slice(0, 2).join('/')}</label>
+            <input type="text" inputMode="numeric" value={form.max_vagas_dia2}
+              onChange={(e) => setForm({ ...form, max_vagas_dia2: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
+          </div>
+        </div>
+        <p style={{ fontSize: 12, opacity: 0.6, marginTop: -8, marginBottom: 16 }}>
+          Quando um dia chega no limite, ele aparece como ESGOTADO no formulário e deixa de aceitar inscrições.
+        </p>
         <div className="field">
           <label>Link do PDF de autorização (menores de idade)</label>
           <input

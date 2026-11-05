@@ -326,13 +326,13 @@ grant execute on function is_admin to authenticated;
 -- ---------------------------------------------------------
 insert into workshops (name, teacher, event_day, start_time, duration_minutes, max_vagas, order_index)
 select * from (values
-  ('Hip Hop', 'Clécio', date '2026-10-24', '14:00', 70, 30, 1),
-  ('Discotecagem + Jam', 'Jeff', date '2026-10-24', '15:20', 70, 25, 2),
-  ('Popping', 'Marcão', date '2026-10-24', '16:40', 70, 30, 3),
-  ('House', 'Step', date '2026-10-24', '18:00', 70, 30, 4),
-  ('Dancehall', 'Rafa', date '2026-10-25', '14:00', 70, 30, 5),
-  ('Hip Hop', 'Wellington', date '2026-10-25', '15:20', 70, 30, 6),
-  ('Jazz Funk', 'Nicolli', date '2026-10-25', '16:40', 70, 30, 7),
-  ('Break', 'Lula', date '2026-10-25', '18:00', 70, 30, 8)
+  ('Hip Hop', 'Clécio', date '2026-11-21', '14:00', 70, 30, 1),
+  ('Discotecagem + Jam', 'Jeff', date '2026-11-21', '15:20', 70, 25, 2),
+  ('Popping', 'Marcão', date '2026-11-21', '16:40', 70, 30, 3),
+  ('House', 'Step', date '2026-11-21', '18:00', 70, 30, 4),
+  ('Dancehall', 'Rafa', date '2026-11-22', '14:00', 70, 30, 5),
+  ('Hip Hop', 'Wellington', date '2026-11-22', '15:20', 70, 30, 6),
+  ('Jazz Funk', 'Nicolli', date '2026-11-22', '16:40', 70, 30, 7),
+  ('Break', 'Lula', date '2026-11-22', '18:00', 70, 30, 8)
 ) as v(name, teacher, event_day, start_time, duration_minutes, max_vagas, order_index)
 where not exists (select 1 from workshops);

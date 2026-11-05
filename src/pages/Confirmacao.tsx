@@ -2,33 +2,17 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useEventSettings } from '../hooks/useEventSettings'
-import { useWorkshopSelection } from '../context/WorkshopSelectionContext'
+import type { ConfirmationRow } from '../types'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { formatDayLong } from '../utils/format'
-
-interface BatchRow {
-  code: string
-  full_name: string
-  workshop_name: string
-  teacher: string
-  event_day: string
-  start_time: string
-  status: string
-}
+import { formatDayLong, formatParticipationLong } from '../utils/format'
 
 export default function Confirmacao() {
   const { batchId } = useParams()
   const { settings } = useEventSettings()
-  const { clear } = useWorkshopSelection()
-  const [rows, setRows] = useState<BatchRow[]>([])
+  const [rows, setRows] = useState<ConfirmationRow[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
-
-  useEffect(() => {
-    clear() // esvazia o carrinho de seleção — a inscrição já foi concluída
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   useEffect(() => {
     if (!batchId) return
@@ -38,7 +22,7 @@ export default function Confirmacao() {
         setNotFound(true)
         return
       }
-      setRows(data as BatchRow[])
+      setRows(data as ConfirmationRow[])
     })
   }, [batchId])
 
@@ -58,8 +42,8 @@ export default function Confirmacao() {
             <p style={{ opacity: 0.7, marginTop: 10 }}>
               Não localizamos essa inscrição. Verifique o link ou faça uma nova inscrição.
             </p>
-            <Link to="/oficinas" className="btn-primary" style={{ marginTop: 24, display: 'inline-block' }}>
-              Ir para oficinas
+            <Link to="/inscricao" className="btn-primary" style={{ marginTop: 24, display: 'inline-block' }}>
+              Ir para a inscrição
             </Link>
           </>
         )}
@@ -69,20 +53,32 @@ export default function Confirmacao() {
             <div className="confirm-stamp">✓</div>
             <h2>Inscrição confirmada!</h2>
             <p style={{ opacity: 0.75, marginTop: 10 }}>
-              {rows[0].full_name} — guarde estes códigos, eles serão usados no check-in do evento.
+              {rows[0].full_name}, você está inscrito(a) no <strong>Encontro de Danças Urbanas de Sumaré</strong>.
+              Guarde o código do seu dia, ele será usado no check-in.
             </p>
 
             {confirmed.length > 0 && (
               <div className="confirm-card">
-                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.6, marginBottom: 8 }}>
-                  Vagas confirmadas ({confirmed.length})
+                <div className="row">
+                  <span>Participação</span>
+                  <strong>{formatParticipationLong(confirmed.map((r) => r.event_day))}</strong>
+                </div>
+                <div className="row">
+                  <span>Local</span>
+                  <strong style={{ textAlign: 'right' }}>{settings.location_name}</strong>
+                </div>
+                <div className="row">
+                  <span>Endereço</span>
+                  <strong style={{ textAlign: 'right', maxWidth: '65%' }}>{settings.location_address}</strong>
+                </div>
+
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.6, margin: '16px 0 4px' }}>
+                  {confirmed.length > 1 ? 'Códigos de check-in' : 'Código de check-in'}
                 </div>
                 {confirmed.map((r) => (
-                  <div key={r.code} style={{ marginBottom: 14 }}>
-                    <div className="row"><span>Oficina</span><strong>{r.workshop_name} — {r.teacher}</strong></div>
-                    <div className="row"><span>Data</span><strong>{formatDayLong(r.event_day)} às {r.start_time}</strong></div>
-                    <div className="row"><span>Local</span><strong>{settings.location_name}</strong></div>
-                    <div className="confirm-code" style={{ fontSize: 18, padding: 10, marginTop: 8 }}><span>{r.code}</span></div>
+                  <div key={r.code} style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, opacity: 0.8 }}>{formatDayLong(r.event_day)}</div>
+                    <div className="confirm-code" style={{ fontSize: 18, padding: 10, marginTop: 4 }}><span>{r.code}</span></div>
                   </div>
                 ))}
               </div>
@@ -90,14 +86,10 @@ export default function Confirmacao() {
 
             {waitlisted.length > 0 && (
               <div className="minor-notice" style={{ marginTop: 20, textAlign: 'left' }}>
-                <strong>Lista de espera ({waitlisted.length})</strong>
-                <p style={{ marginTop: 6 }}>
-                  As oficinas abaixo já atingiram o limite de vagas. Você entrou na lista de espera e
-                  será chamado(a) automaticamente se surgir uma vaga.
-                </p>
+                <strong>Lista de espera</strong>
                 {waitlisted.map((r) => (
                   <div key={r.code} style={{ marginTop: 10, fontSize: 13 }}>
-                    <strong>{r.workshop_name} — {r.teacher}</strong> · {formatDayLong(r.event_day)} às {r.start_time}
+                    {formatDayLong(r.event_day)}
                     <br />
                     <span style={{ opacity: 0.7 }}>Código: {r.code}</span>
                   </div>
@@ -105,8 +97,12 @@ export default function Confirmacao() {
               </div>
             )}
 
-            <div style={{ marginTop: 30, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link to="/oficinas" className="btn-secondary">Ver outras oficinas</Link>
+            <p style={{ marginTop: 22, fontSize: 14, opacity: 0.8 }}>
+              A inscrição dá acesso às aulas programadas para o(s) dia(s) selecionado(s).
+            </p>
+
+            <div style={{ marginTop: 26, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link to="/programacao" className="btn-secondary">Ver programação</Link>
               <Link to="/" className="btn-primary">Voltar ao início</Link>
             </div>
           </>

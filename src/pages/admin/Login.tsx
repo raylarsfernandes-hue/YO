@@ -27,7 +27,7 @@ export default function AdminLogin() {
       <div className="admin-login">
         <h2 style={{ marginBottom: 6 }}>Área administrativa</h2>
         <p style={{ opacity: 0.65, fontSize: 14, marginBottom: 24 }}>
-          Sumaré Hip Hop Festival — Inscrições
+          Encontro de Danças Urbanas de Sumaré — Inscrições
         </p>
 
         {error && <div className="form-alert">{error}</div>}

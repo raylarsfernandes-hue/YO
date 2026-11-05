@@ -53,7 +53,8 @@ export default function AdminLayout() {
         <div className="tabs">
           <NavLink to="/admin" end className={({ isActive }) => (isActive ? 'active' : '')}>Dashboard</NavLink>
           <NavLink to="/admin/inscritos" className={({ isActive }) => (isActive ? 'active' : '')}>Inscritos</NavLink>
-          <NavLink to="/admin/oficinas" className={({ isActive }) => (isActive ? 'active' : '')}>Oficinas</NavLink>
+          <NavLink to="/admin/programacao" className={({ isActive }) => (isActive ? 'active' : '')}>Programação</NavLink>
+          <NavLink to="/admin/professores" className={({ isActive }) => (isActive ? 'active' : '')}>Professores</NavLink>
           <NavLink to="/admin/configuracoes" className={({ isActive }) => (isActive ? 'active' : '')}>Configurações</NavLink>
         </div>
         <button className="btn-sm" onClick={handleLogout}>Sair</button>

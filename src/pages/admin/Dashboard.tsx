@@ -1,22 +1,25 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabaseClient'
 import { useEventSettings } from '../../hooks/useEventSettings'
-import type { WorkshopPublic, RegistrationRow } from '../../types'
-import { formatDayLong, statusLabel, computeAge } from '../../utils/format'
+import type { DayPublic, RegistrationRow } from '../../types'
+import { formatDayLong, statusLabel, computeAge, formatParticipation } from '../../utils/format'
+
+const bigNumber = { fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' } as const
+const smallLabel = { fontSize: 12, opacity: 0.6, textTransform: 'uppercase' } as const
 
 export default function Dashboard() {
   const { settings } = useEventSettings()
-  const [workshops, setWorkshops] = useState<WorkshopPublic[]>([])
+  const [days, setDays] = useState<DayPublic[]>([])
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([])
   const [loading, setLoading] = useState(true)
 
   async function load() {
     setLoading(true)
-    const [{ data: w }, { data: r }] = await Promise.all([
-      supabase.from('workshops_public').select('*').order('order_index'),
+    const [{ data: d }, { data: r }] = await Promise.all([
+      supabase.from('days_public').select('*').order('event_day'),
       supabase.from('registrations').select('*').order('created_at', { ascending: false }),
     ])
-    setWorkshops((w ?? []) as WorkshopPublic[])
+    setDays((d ?? []) as DayPublic[])
     setRegistrations((r ?? []) as RegistrationRow[])
     setLoading(false)
   }
@@ -25,116 +28,101 @@ export default function Dashboard() {
 
   const confirmed = registrations.filter((r) => r.status === 'confirmed')
   const waitlisted = registrations.filter((r) => r.status === 'waitlisted')
-  const totalInscricoes = confirmed.length
-  const pessoasUnicas = new Set(confirmed.concat(waitlisted).map((r) => r.cpf)).size
-  const totalVagas = workshops.reduce((acc, w) => acc + w.max_vagas, 0)
-  const vagasPreenchidas = workshops.reduce((acc, w) => acc + w.taken, 0)
-  const ocupacao = totalVagas > 0 ? Math.round((vagasPreenchidas / totalVagas) * 100) : 0
 
-  const ranking = [...workshops].sort((a, b) => b.taken - a.taken)
-  const maisProcurada = ranking[0]
-  const menosProcurada = ranking[ranking.length - 1]
-
-  const porDia: Record<string, number> = {}
+  // dias de cada pessoa (por CPF), só inscrições confirmadas
+  const diasPorCpf = new Map<string, Set<string>>()
   confirmed.forEach((r) => {
-    const w = workshops.find((w) => w.id === r.workshop_id)
-    if (w) porDia[w.event_day] = (porDia[w.event_day] ?? 0) + 1
+    if (!diasPorCpf.has(r.cpf)) diasPorCpf.set(r.cpf, new Set())
+    diasPorCpf.get(r.cpf)!.add(r.event_day)
   })
-
-  const recentes = registrations.slice(0, 6)
+  const totalInscritos = diasPorCpf.size
+  const dia1 = days[0]
+  const dia2 = days[1]
+  const doisDias = days.length >= 2
+    ? Array.from(diasPorCpf.values()).filter((s) => s.has(days[0].event_day) && s.has(days[1].event_day)).length
+    : 0
 
   const menores = confirmed.filter((r) => r.birth_date && computeAge(r.birth_date, settings.event_start_date) < 18)
-  const menoresConfirmados = menores.filter((r) => r.guardian_authorization_status === 'confirmada').length
-  const menoresPendentes = menores.filter((r) => r.guardian_authorization_status === 'pendente').length
+  const menoresPessoas = new Set(menores.map((r) => r.cpf)).size
+  const autorizacoesPendentes = new Set(
+    menores.filter((r) => r.guardian_authorization_status === 'pendente').map((r) => r.cpf)
+  ).size
+
+  const recentes = registrations.slice(0, 6)
 
   if (loading) return <p>Carregando indicadores...</p>
 
   return (
     <div>
-      <h2 style={{ marginBottom: 6 }}>Sumaré Hip Hop Festival — Inscrições</h2>
+      <h2 style={{ marginBottom: 6 }}>Encontro de Danças Urbanas de Sumaré — Inscrições</h2>
       <p style={{ opacity: 0.6, fontSize: 14, marginBottom: 20 }}>Visão geral atualizada em tempo real.</p>
 
       <div className="grid-4">
         <div className="card">
-          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{pessoasUnicas}</div>
-          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Participantes únicos</div>
+          <div style={bigNumber}>{totalInscritos}</div>
+          <div style={smallLabel}>Total de inscritos</div>
+          <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>pessoas, contadas uma vez só</div>
+        </div>
+        {dia1 && (
+          <div className="card">
+            <div style={bigNumber}>{dia1.taken}</div>
+            <div style={smallLabel}>Inscritos {formatDayLong(dia1.event_day)}</div>
+          </div>
+        )}
+        {dia2 && (
+          <div className="card">
+            <div style={bigNumber}>{dia2.taken}</div>
+            <div style={smallLabel}>Inscritos {formatDayLong(dia2.event_day)}</div>
+          </div>
+        )}
+        <div className="card">
+          <div style={bigNumber}>{doisDias}</div>
+          <div style={smallLabel}>Inscritos nos dois dias</div>
         </div>
         <div className="card">
-          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{totalInscricoes}</div>
-          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Inscrições em oficinas</div>
+          <div style={{ ...bigNumber, color: 'var(--vermelho)' }}>{menoresPessoas}</div>
+          <div style={smallLabel}>Menores de idade</div>
         </div>
         <div className="card">
-          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--amarelo)', fontFamily: 'Oswald' }}>{vagasPreenchidas}/{totalVagas}</div>
-          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Vagas ocupadas ({ocupacao}%)</div>
-        </div>
-        <div className="card">
-          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--vermelho)', fontFamily: 'Oswald' }}>{waitlisted.length}</div>
-          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Na lista de espera</div>
-        </div>
-        <div className="card">
-          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--vermelho)', fontFamily: 'Oswald' }}>{menores.length}</div>
-          <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>Menores de idade</div>
-          {menores.length > 0 && (
-            <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>
-              {menoresConfirmados} autorizações confirmadas · {menoresPendentes} pendentes
-            </div>
-          )}
+          <div style={{ ...bigNumber, color: 'var(--vermelho)' }}>{autorizacoesPendentes}</div>
+          <div style={smallLabel}>Autorizações pendentes</div>
+          <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>menores com autorização do responsável pendente</div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 24 }}>
-        <div className="card">
-          <h3 style={{ fontSize: 15, marginBottom: 12 }}>Oficinas mais procuradas</h3>
-          {ranking.map((w, i) => (
-            <div key={w.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '7px 0', borderBottom: '1px solid var(--borda)' }}>
-              <span>{i + 1}. {w.name} — {w.teacher}</span>
-              <strong>{w.taken} inscritos</strong>
-            </div>
-          ))}
-          {maisProcurada && (
-            <p style={{ fontSize: 12, opacity: 0.6, marginTop: 10 }}>
-              Mais procurada: <strong>{maisProcurada.name}</strong> · Menos procurada: <strong>{menosProcurada.name}</strong>
-            </p>
-          )}
-        </div>
-
-        <div className="card">
-          <h3 style={{ fontSize: 15, marginBottom: 12 }}>Inscrições por dia</h3>
-          {Object.entries(porDia).sort().map(([dia, count]) => (
-            <div key={dia} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '7px 0', borderBottom: '1px solid var(--borda)' }}>
-              <span>{formatDayLong(dia)}</span>
-              <strong>{count}</strong>
-            </div>
-          ))}
-
-          <h3 style={{ fontSize: 15, margin: '18px 0 12px' }}>Inscrições recentes</h3>
-          {recentes.map((r) => (
-            <div key={r.id} style={{ fontSize: 13, padding: '6px 0', borderBottom: '1px solid var(--borda)' }}>
-              {r.full_name} <span style={{ opacity: 0.5 }}>· {r.code}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <h3 style={{ fontSize: 16, margin: '28px 0 14px' }}>Ocupação por oficina</h3>
-      <div className="grid-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-        {workshops.map((w) => {
-          const pct = Math.round((w.taken / Math.max(w.max_vagas, 1)) * 100)
+      <h3 style={{ fontSize: 16, margin: '28px 0 14px' }}>Vagas por dia</h3>
+      <div className="grid-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+        {days.map((d) => {
+          const pct = Math.round((d.taken / Math.max(d.max_vagas, 1)) * 100)
           return (
-            <div key={w.id} className="card">
-              <div style={{ fontSize: 12, opacity: 0.6, textTransform: 'uppercase' }}>{formatDayLong(w.event_day)} · {w.start_time}</div>
-              <div style={{ fontSize: 18, fontWeight: 700, margin: '4px 0' }}>{w.name} — {w.teacher}</div>
-              <div className="progress-bar" style={{ margin: '10px 0' }}><div style={{ width: `${pct}%` }} /></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span>{w.taken} / {w.max_vagas} vagas · {pct}%</span>
-                <span className={`badge ${w.status}`}>{statusLabel(w.status)}</span>
+            <div key={d.event_day} className="card">
+              <div style={smallLabel}>{formatDayLong(d.event_day)}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, margin: '4px 0' }}>
+                {d.taken} / {d.max_vagas} inscritos
               </div>
-              {w.waiting > 0 && (
-                <div style={{ fontSize: 12, color: 'var(--vermelho)', marginTop: 6 }}>{w.waiting} na lista de espera</div>
-              )}
+              <div className="progress-bar" style={{ margin: '10px 0' }}><div style={{ width: `${Math.min(pct, 100)}%` }} /></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                <span>{d.vagas_restantes} vagas restantes · ocupação {pct}%</span>
+                <span className={`badge ${d.status === 'esgotado' ? 'esgotada' : d.status}`}>{statusLabel(d.status)}</span>
+              </div>
             </div>
           )
         })}
+      </div>
+
+      <div className="card" style={{ marginTop: 24 }}>
+        <h3 style={{ fontSize: 15, marginBottom: 12 }}>Inscrições recentes</h3>
+        {recentes.map((r) => (
+          <div key={r.id} style={{ fontSize: 13, padding: '6px 0', borderBottom: '1px solid var(--borda)' }}>
+            {r.full_name} <span style={{ opacity: 0.5 }}>· {formatParticipation([r.event_day])} · {r.code}</span>
+          </div>
+        ))}
+        {recentes.length === 0 && <p style={{ fontSize: 13, opacity: 0.6 }}>Nenhuma inscrição ainda.</p>}
+        {waitlisted.length > 0 && (
+          <p style={{ fontSize: 12, color: 'var(--vermelho)', marginTop: 12 }}>
+            {waitlisted.length} inscrição(ões) antiga(s) em lista de espera (do formato por oficina).
+          </p>
+        )}
       </div>
     </div>
   )

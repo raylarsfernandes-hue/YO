@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../supabaseClient'
 import { useEventSettings } from '../../hooks/useEventSettings'
-import type { RegistrationRow, Workshop, GuardianStatus } from '../../types'
+import type { RegistrationRow, GuardianStatus } from '../../types'
 import { downloadCSV } from '../../utils/csv'
-import { formatDayLong, computeAge, guardianStatusLabel } from '../../utils/format'
+import { formatDayLong, computeAge, guardianStatusLabel, formatParticipation } from '../../utils/format'
 
 const STATUS_LABEL: Record<string, string> = {
   confirmed: 'Confirmada',
@@ -11,144 +11,172 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: 'Cancelada',
 }
 
+type DayFilter = '' | 'd1' | 'd2' | 'both'
+
+interface Person {
+  cpf: string
+  name: string
+  phone: string
+  email: string
+  instagram: string | null
+  birth_date: string | null
+  guardian: GuardianStatus
+  image_consent: boolean
+  consent_marketing: boolean
+  created_at: string
+  rows: RegistrationRow[] // uma por dia
+}
+
 export default function Inscritos() {
   const { settings } = useEventSettings()
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([])
-  const [workshops, setWorkshops] = useState<Workshop[]>([])
   const [loading, setLoading] = useState(true)
-  const [groupByParticipant, setGroupByParticipant] = useState(false)
 
   const [search, setSearch] = useState('')
-  const [filterWorkshop, setFilterWorkshop] = useState('')
+  const [filterDay, setFilterDay] = useState<DayFilter>('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterMinors, setFilterMinors] = useState(false)
 
+  const day1 = settings.event_start_date
+  const day2 = settings.event_end_date
+  const label1 = formatParticipation([day1])
+  const label2 = formatParticipation([day2])
+
   async function load() {
     setLoading(true)
-    const [{ data: r }, { data: w }] = await Promise.all([
-      supabase
-        .from('registrations')
-        .select('*, workshops(name, teacher, event_day, start_time)')
-        .order('created_at', { ascending: false }),
-      supabase.from('workshops').select('*').order('order_index'),
-    ])
-    setRegistrations((r ?? []) as RegistrationRow[])
-    setWorkshops((w ?? []) as Workshop[])
+    const { data } = await supabase.from('registrations').select('*').order('created_at', { ascending: false })
+    setRegistrations((data ?? []) as RegistrationRow[])
     setLoading(false)
   }
 
   useEffect(() => { load() }, [])
 
-  function ageOf(r: RegistrationRow): number | null {
-    if (!r.birth_date) return null
-    return computeAge(r.birth_date, settings.event_start_date)
-  }
+  const people: Person[] = useMemo(() => {
+    const map = new Map<string, Person>()
+    registrations.forEach((r) => {
+      let p = map.get(r.cpf)
+      if (!p) {
+        p = {
+          cpf: r.cpf, name: r.full_name, phone: r.phone, email: r.email,
+          instagram: r.instagram, birth_date: r.birth_date,
+          guardian: r.guardian_authorization_status, image_consent: r.image_consent,
+          consent_marketing: r.consent_marketing, created_at: r.created_at, rows: [],
+        }
+        map.set(r.cpf, p)
+      }
+      p.rows.push(r)
+      if (r.created_at < p.created_at) p.created_at = r.created_at
+    })
+    map.forEach((p) => p.rows.sort((a, b) => a.event_day.localeCompare(b.event_day)))
+    return Array.from(map.values())
+  }, [registrations])
 
-  function isMinor(r: RegistrationRow): boolean {
-    const age = ageOf(r)
-    return age !== null && age < 18
+  function ageOf(p: Person): number | null {
+    return p.birth_date ? computeAge(p.birth_date, settings.event_start_date) : null
+  }
+  function isMinor(p: Person): boolean {
+    const a = ageOf(p)
+    return a !== null && a < 18
+  }
+  function activeDays(p: Person): string[] {
+    return p.rows.filter((r) => r.status !== 'cancelled').map((r) => r.event_day)
+  }
+  function personStatus(p: Person): string {
+    if (p.rows.some((r) => r.status === 'confirmed')) return 'confirmed'
+    if (p.rows.some((r) => r.status === 'waitlisted')) return 'waitlisted'
+    return 'cancelled'
+  }
+  function participationLabel(p: Person): string {
+    const days = activeDays(p)
+    return days.length > 0 ? formatParticipation(days) : 'Cancelada'
   }
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()
-    return registrations.filter((r) => {
-      if (filterWorkshop && r.workshop_id !== filterWorkshop) return false
-      if (filterStatus && r.status !== filterStatus) return false
-      if (filterMinors && !isMinor(r)) return false
-      if (term) {
-        const haystack = `${r.full_name} ${r.cpf} ${r.email} ${r.phone}`.toLowerCase()
-        if (!haystack.includes(term)) return false
-      }
+    return people.filter((p) => {
+      const days = activeDays(p)
+      if (filterDay === 'd1' && !days.includes(day1)) return false
+      if (filterDay === 'd2' && !days.includes(day2)) return false
+      if (filterDay === 'both' && !(days.includes(day1) && days.includes(day2))) return false
+      if (filterStatus && !p.rows.some((r) => r.status === filterStatus)) return false
+      if (filterMinors && !isMinor(p)) return false
+      if (term && !`${p.name} ${p.cpf} ${p.email} ${p.phone}`.toLowerCase().includes(term)) return false
       return true
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registrations, search, filterWorkshop, filterStatus, filterMinors, settings.event_start_date])
+  }, [people, search, filterDay, filterStatus, filterMinors, day1, day2])
 
-  const participantsGrouped = useMemo(() => {
-    const map = new Map<string, { name: string; cpf: string; email: string; phone: string; rows: RegistrationRow[] }>()
-    filtered.forEach((r) => {
-      if (!map.has(r.cpf)) map.set(r.cpf, { name: r.full_name, cpf: r.cpf, email: r.email, phone: r.phone, rows: [] })
-      map.get(r.cpf)!.rows.push(r)
-    })
-    return Array.from(map.values())
-  }, [filtered])
-
-  async function handleCancel(id: string) {
-    if (!confirm('Cancelar esta inscrição? A vaga será liberada automaticamente.')) return
-    await supabase.rpc('admin_cancel_registration', { p_id: id })
+  async function rpc(name: string, args: Record<string, unknown>, errorMsg?: string) {
+    const { error } = await supabase.rpc(name, args)
+    if (error && errorMsg) alert(errorMsg)
     load()
   }
 
-  async function handleReactivate(id: string) {
-    const { error } = await supabase.rpc('admin_reactivate_registration', { p_id: id })
-    if (error) alert('Não foi possível reativar: a oficina pode estar esgotada.')
+  function handleCancel(id: string) {
+    if (!confirm('Cancelar a inscrição deste dia? A vaga será liberada automaticamente.')) return
+    rpc('admin_cancel_registration', { p_id: id })
+  }
+  function handleReactivate(id: string) {
+    rpc('admin_reactivate_registration', { p_id: id }, 'Não foi possível reativar: o dia pode estar esgotado ou a pessoa já tem outra inscrição ativa nele.')
+  }
+  function handlePromote(id: string) {
+    rpc('admin_promote_waitlist', { p_id: id }, 'Não foi possível promover: o dia já está com todas as vagas ocupadas.')
+  }
+  function handleCheckin(id: string, checked: boolean) {
+    rpc('admin_set_checkin', { p_id: id, p_checked: checked })
+  }
+  async function handleGuardianStatus(cpf: string, status: GuardianStatus) {
+    await supabase.from('registrations').update({ guardian_authorization_status: status }).eq('cpf', cpf)
     load()
   }
 
-  async function handlePromote(id: string) {
-    const { error } = await supabase.rpc('admin_promote_waitlist', { p_id: id })
-    if (error) alert('Não foi possível promover: a oficina já está com todas as vagas confirmadas ocupadas.')
-    load()
-  }
-
-  async function handleCheckin(id: string, checked: boolean) {
-    await supabase.rpc('admin_set_checkin', { p_id: id, p_checked: checked })
-    load()
-  }
-
-  async function handleGuardianStatus(id: string, status: GuardianStatus) {
-    await supabase.from('registrations').update({ guardian_authorization_status: status }).eq('id', id)
-    load()
-  }
-
-  function exportAll() {
-    downloadCSV('inscricoes-sumare-hiphop.csv', toCSVRows(filtered))
-  }
-
-  function exportWorkshop(workshopId: string) {
-    const rows = registrations.filter((r) => r.workshop_id === workshopId)
-    const w = workshops.find((w) => w.id === workshopId)
-    downloadCSV(`inscritos-${w?.name ?? 'oficina'}-${w?.teacher ?? ''}.csv`.replace(/\s+/g, '-'), toCSVRows(rows))
-  }
-
-  function toCSVRows(rows: RegistrationRow[]) {
-    return rows.map((r) => {
-      const age = ageOf(r)
+  function toCSVRows(list: Person[]) {
+    return list.map((p) => {
+      const age = ageOf(p)
+      const r1 = p.rows.find((r) => r.event_day === day1 && r.status !== 'cancelled')
+      const r2 = p.rows.find((r) => r.event_day === day2 && r.status !== 'cancelled')
       return {
-        Codigo: r.code,
-        Nome: r.full_name,
-        CPF: r.cpf,
-        Telefone: r.phone,
-        Email: r.email,
-        Instagram: r.instagram ?? '',
-        DataNascimento: r.birth_date ?? '',
-        IdadeNoEvento: age ?? '',
+        Nome: p.name,
+        CPF: p.cpf,
+        Telefone: p.phone,
+        Email: p.email,
+        Instagram: p.instagram ?? '',
+        DataNascimento: p.birth_date ?? '',
+        Idade: age ?? '',
         MenorDeIdade: age !== null && age < 18 ? 'Sim' : 'Não',
-        AutorizacaoResponsavel: guardianStatusLabel(r.guardian_authorization_status),
-        AutorizacaoImagem: r.image_consent ? 'Sim' : 'Não',
-        Oficina: r.workshops?.name ?? '',
-        Professor: r.workshops?.teacher ?? '',
-        Dia: r.workshops ? formatDayLong(r.workshops.event_day) : '',
-        Horario: r.workshops?.start_time ?? '',
-        InscritoEm: new Date(r.created_at).toLocaleString('pt-BR'),
-        AceitaComunicacao: r.consent_marketing ? 'Sim' : 'Não',
-        CheckIn: r.checked_in ? 'Compareceu' : 'Não compareceu',
-        Status: STATUS_LABEL[r.status] ?? r.status,
+        [`Dia ${label1}`]: r1 ? 'Sim' : 'Não',
+        [`Dia ${label2}`]: r2 ? 'Sim' : 'Não',
+        Participacao: participationLabel(p),
+        Codigos: p.rows.filter((r) => r.status !== 'cancelled').map((r) => r.code).join(' / '),
+        AutorizacaoImagem: p.image_consent ? 'Sim' : 'Não',
+        AutorizacaoResponsavel: guardianStatusLabel(p.guardian),
+        AceitaComunicacao: p.consent_marketing ? 'Sim' : 'Não',
+        [`CheckIn ${label1}`]: r1 ? (r1.checked_in ? 'Compareceu' : 'Não compareceu') : '',
+        [`CheckIn ${label2}`]: r2 ? (r2.checked_in ? 'Compareceu' : 'Não compareceu') : '',
+        InscritoEm: new Date(p.created_at).toLocaleString('pt-BR'),
+        Status: STATUS_LABEL[personStatus(p)],
       }
     })
+  }
+
+  function exportList(name: string, list: Person[]) {
+    downloadCSV(name, toCSVRows(list))
+  }
+
+  function exportDay(day: string, label: string) {
+    const list = people.filter((p) => activeDays(p).includes(day))
+    exportList(`inscritos-${label.replace('/', '-')}.csv`, list)
   }
 
   if (loading) return <p>Carregando inscritos...</p>
 
-  const totalInscricoes = filtered.filter((r) => r.status !== 'cancelled').length
-  const totalParticipantes = new Set(filtered.filter((r) => r.status !== 'cancelled').map((r) => r.cpf)).size
+  const ativos = people.filter((p) => activeDays(p).length > 0).length
 
   return (
     <div>
       <h2>Inscritos</h2>
       <p style={{ opacity: 0.6, fontSize: 14 }}>
-        {totalParticipantes} participantes únicos · {totalInscricoes} inscrições em oficinas
-        {' '}({filtered.length} de {registrations.length} linhas com os filtros atuais)
+        {ativos} inscritos ativos · mostrando {filtered.length} de {people.length} pessoas com os filtros atuais
       </p>
 
       <div className="toolbar">
@@ -158,11 +186,11 @@ export default function Inscritos() {
           onChange={(e) => setSearch(e.target.value)}
           style={{ minWidth: 260 }}
         />
-        <select value={filterWorkshop} onChange={(e) => setFilterWorkshop(e.target.value)}>
-          <option value="">Todas as oficinas</option>
-          {workshops.map((w) => (
-            <option key={w.id} value={w.id}>{w.name} — {w.teacher}</option>
-          ))}
+        <select value={filterDay} onChange={(e) => setFilterDay(e.target.value as DayFilter)}>
+          <option value="">Todos os dias</option>
+          <option value="d1">{label1}</option>
+          <option value="d2">{label2}</option>
+          <option value="both">Dois dias</option>
         </select>
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option value="">Todos os status</option>
@@ -174,129 +202,94 @@ export default function Inscritos() {
           <input type="checkbox" checked={filterMinors} onChange={(e) => setFilterMinors(e.target.checked)} />
           Só menores de idade
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-          <input type="checkbox" checked={groupByParticipant} onChange={(e) => setGroupByParticipant(e.target.checked)} />
-          Agrupar por participante
-        </label>
-        <button className="btn-sm ok" onClick={exportAll}>Exportar inscrições (CSV)</button>
-        {filterWorkshop && (
-          <button className="btn-sm" onClick={() => exportWorkshop(filterWorkshop)}>Exportar só esta oficina</button>
-        )}
       </div>
 
-      {groupByParticipant ? (
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr><th>Nome</th><th>CPF</th><th>E-mail</th><th>Oficinas</th></tr>
-            </thead>
-            <tbody>
-              {participantsGrouped.map((p) => (
+      <div className="toolbar">
+        <button className="btn-sm ok" onClick={() => exportList('inscritos-todos.csv', people)}>Exportar todos (CSV)</button>
+        <button className="btn-sm" onClick={() => exportDay(day1, label1)}>Exportar só {label1}</button>
+        <button className="btn-sm" onClick={() => exportDay(day2, label2)}>Exportar só {label2}</button>
+      </div>
+
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Participante</th>
+              <th>CPF</th>
+              <th>Telefone</th>
+              <th>Idade</th>
+              <th>Autorização resp.</th>
+              <th>Participação</th>
+              <th>Por dia</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((p) => {
+              const age = ageOf(p)
+              const minor = isMinor(p)
+              return (
                 <tr key={p.cpf}>
-                  <td>{p.name}</td>
+                  <td>
+                    {p.name}
+                    <div style={{ fontSize: 11, opacity: 0.55 }}>{p.email}</div>
+                  </td>
                   <td>{p.cpf}</td>
-                  <td>{p.email}</td>
+                  <td>{p.phone}</td>
+                  <td>{age ?? '—'}{minor && <span className="badge ultimas" style={{ marginLeft: 6 }}>Menor</span>}</td>
+                  <td>
+                    {minor ? (
+                      <select
+                        value={p.guardian}
+                        onChange={(e) => handleGuardianStatus(p.cpf, e.target.value as GuardianStatus)}
+                        style={{ background: 'var(--preto)', color: 'var(--branco)', border: '1px solid var(--borda)', borderRadius: 4, fontSize: 12, padding: '4px 6px' }}
+                      >
+                        <option value="pendente">Pendente</option>
+                        <option value="confirmada">Confirmada</option>
+                      </select>
+                    ) : (
+                      <span style={{ opacity: 0.5, fontSize: 12 }}>Não necessária</span>
+                    )}
+                  </td>
+                  <td><strong>{participationLabel(p)}</strong></td>
                   <td>
                     {p.rows.map((r) => (
-                      <div key={r.id} style={{ marginBottom: 4 }}>
-                        {r.workshops?.name} — {r.workshops?.teacher}{' '}
+                      <div key={r.id} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '4px 0' }}>
+                        <span style={{ minWidth: 110 }}>{formatDayLong(r.event_day)}</span>
                         <span className={`status-tag ${r.status}`}>{STATUS_LABEL[r.status]}</span>
+                        <span style={{ fontSize: 11, opacity: 0.5 }}>{r.code}</span>
+                        <label style={{ display: 'flex', gap: 4, alignItems: 'center', fontSize: 12 }}>
+                          <input
+                            type="checkbox"
+                            checked={r.checked_in}
+                            onChange={(e) => handleCheckin(r.id, e.target.checked)}
+                            disabled={r.status !== 'confirmed'}
+                          />
+                          check-in
+                        </label>
+                        {r.status === 'confirmed' && (
+                          <button className="btn-sm danger" onClick={() => handleCancel(r.id)}>Cancelar</button>
+                        )}
+                        {r.status === 'waitlisted' && (
+                          <>
+                            <button className="btn-sm ok" onClick={() => handlePromote(r.id)}>Promover</button>
+                            <button className="btn-sm danger" onClick={() => handleCancel(r.id)}>Cancelar</button>
+                          </>
+                        )}
+                        {r.status === 'cancelled' && (
+                          <button className="btn-sm ok" onClick={() => handleReactivate(r.id)}>Reativar</button>
+                        )}
                       </div>
                     ))}
                   </td>
                 </tr>
-              ))}
-              {participantsGrouped.length === 0 && (
-                <tr><td colSpan={4} style={{ textAlign: 'center', opacity: 0.6, padding: 20 }}>Nenhum participante encontrado.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Nome</th>
-                <th>CPF</th>
-                <th>Telefone</th>
-                <th>Nascimento</th>
-                <th>Idade</th>
-                <th>Autorização resp.</th>
-                <th>Oficina</th>
-                <th>Dia / Horário</th>
-                <th>Status</th>
-                <th>Check-in</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const age = ageOf(r)
-                const minor = isMinor(r)
-                return (
-                  <tr key={r.id}>
-                    <td>{r.code}</td>
-                    <td>{r.full_name}</td>
-                    <td>{r.cpf}</td>
-                    <td>{r.phone}</td>
-                    <td>{r.birth_date ?? '—'}</td>
-                    <td>{age ?? '—'}{minor && <span className="badge ultimas" style={{ marginLeft: 6 }}>Menor</span>}</td>
-                    <td>
-                      {minor ? (
-                        <select
-                          value={r.guardian_authorization_status}
-                          onChange={(e) => handleGuardianStatus(r.id, e.target.value as GuardianStatus)}
-                          style={{ background: 'var(--preto)', color: 'var(--branco)', border: '1px solid var(--borda)', borderRadius: 4, fontSize: 12, padding: '4px 6px' }}
-                        >
-                          <option value="pendente">Pendente</option>
-                          <option value="confirmada">Confirmada</option>
-                        </select>
-                      ) : (
-                        <span style={{ opacity: 0.5, fontSize: 12 }}>Não necessária</span>
-                      )}
-                    </td>
-                    <td>{r.workshops?.name} — {r.workshops?.teacher}</td>
-                    <td>{r.workshops && formatDayLong(r.workshops.event_day)} · {r.workshops?.start_time}</td>
-                    <td>
-                      <span className={`status-tag ${r.status}`}>{STATUS_LABEL[r.status]}</span>
-                      {r.status === 'waitlisted' && r.waitlist_position && (
-                        <div style={{ fontSize: 11, opacity: 0.6 }}>posição {r.waitlist_position}</div>
-                      )}
-                    </td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={r.checked_in}
-                        onChange={(e) => handleCheckin(r.id, e.target.checked)}
-                        disabled={r.status !== 'confirmed'}
-                      />
-                    </td>
-                    <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {r.status === 'confirmed' && (
-                        <button className="btn-sm danger" onClick={() => handleCancel(r.id)}>Cancelar</button>
-                      )}
-                      {r.status === 'waitlisted' && (
-                        <>
-                          <button className="btn-sm ok" onClick={() => handlePromote(r.id)}>Promover</button>
-                          <button className="btn-sm danger" onClick={() => handleCancel(r.id)}>Cancelar</button>
-                        </>
-                      )}
-                      {r.status === 'cancelled' && (
-                        <button className="btn-sm ok" onClick={() => handleReactivate(r.id)}>Reativar</button>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={12} style={{ textAlign: 'center', opacity: 0.6, padding: 20 }}>Nenhuma inscrição encontrada.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+              )
+            })}
+            {filtered.length === 0 && (
+              <tr><td colSpan={7} style={{ textAlign: 'center', opacity: 0.6, padding: 20 }}>Nenhuma inscrição encontrada.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

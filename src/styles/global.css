@@ -123,7 +123,7 @@ button {
   font-size: 15px;
   letter-spacing: 0.03em;
 }
-.site-header .logo img { height: 30px; width: auto; }
+.site-header .logo img { height: 46px; width: auto; display: block; }
 .site-header nav {
   display: flex;
   gap: 22px;
@@ -1008,3 +1008,83 @@ button {
   .site-header nav { gap: 14px; flex-wrap: wrap; }
   .manifest-section { min-height: unset; padding: 60px 16px; }
 }
+
+
+/* ---------- Programação (aulas por dia, sem professor) ---------- */
+.schedule-days {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+.schedule-day {
+  background: var(--preto-suave);
+  border: 1px solid var(--borda);
+  border-top: 4px solid var(--amarelo);
+  border-radius: var(--radius);
+  padding: 22px 22px 8px;
+}
+.schedule-day h3 {
+  font-size: 22px;
+  color: var(--branco);
+  margin-bottom: 14px;
+}
+.schedule-row {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-top: 1px solid var(--borda);
+}
+.schedule-num {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: var(--amarelo);
+  min-width: 56px;
+}
+.schedule-name {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  font-size: 19px;
+  color: var(--branco);
+}
+.schedule-time { font-size: 14px; opacity: 0.75; margin-top: 2px; }
+@media (max-width: 760px) {
+  .schedule-days { grid-template-columns: 1fr; }
+  .site-header .logo img { height: 38px; }
+}
+
+/* ---------- Escolha do dia na inscrição ---------- */
+.day-options {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+.day-options.error .day-option { border-color: var(--vermelho); }
+.day-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  background: var(--preto);
+  color: var(--branco);
+  border: 2px solid var(--borda);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  min-height: 64px;
+}
+.day-option:hover:not(:disabled) { border-color: var(--cinza); }
+.day-option.selected { border-color: var(--amarelo); background: rgba(242,183,5,0.08); }
+.day-option:disabled { opacity: 0.45; cursor: not-allowed; }
+.day-option-title {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  font-size: 18px;
+  letter-spacing: 0.01em;
+}
+.day-option-vagas { font-size: 13px; opacity: 0.8; }
+.day-option-vagas.ultimas { color: var(--amarelo); opacity: 1; }
+.day-option-vagas.esgotado { color: #ff8890; font-weight: 700; opacity: 1; }

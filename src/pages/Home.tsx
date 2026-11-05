@@ -1,37 +1,25 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../supabaseClient'
-import type { WorkshopPublic } from '../types'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import SupportStrip from '../components/SupportStrip'
 import { useEventSettings } from '../hooks/useEventSettings'
-import { formatDayLong, formatDateRangeShort } from '../utils/format'
-import { resolveImageUrl } from '../utils/image'
+import { useDays } from '../hooks/useDays'
+import { useSchedule } from '../hooks/useSchedule'
+import { formatDayHeading, formatDateRangeShort, formatTimeRange } from '../utils/format'
 import heroDancer from '../assets/hero_dancer.webp'
-import heroTitle from '../assets/hero_title.webp'
+import heroTitle from '../assets/logo_evento.webp'
 import sobreDancer from '../assets/sobre_dancer.webp'
 import sobreTitle from '../assets/sobre_title.webp'
 
 export default function Home() {
   const { settings } = useEventSettings()
-  const [workshops, setWorkshops] = useState<WorkshopPublic[]>([])
-  const [loading, setLoading] = useState(true)
+  const { days, loading } = useDays()
+  const { items, dias } = useSchedule()
 
-  useEffect(() => {
-    supabase
-      .from('workshops_public')
-      .select('*')
-      .order('order_index', { ascending: true })
-      .then(({ data }) => {
-        setWorkshops((data ?? []) as WorkshopPublic[])
-        setLoading(false)
-      })
-  }, [])
-
-  const totalVagas = workshops.reduce((acc, w) => acc + w.max_vagas, 0)
-  const totalOcupadas = workshops.reduce((acc, w) => acc + w.taken, 0)
-  const mapQuery = encodeURIComponent(`${settings.location_name}, ${settings.location_address}`)
+  const vagasDisponiveis = days.reduce((acc, d) => acc + d.vagas_restantes, 0)
+  const mapQuery = encodeURIComponent(
+    settings.map_query?.trim() || `${settings.location_name}, ${settings.location_address}`
+  )
 
   return (
     <div>
@@ -41,9 +29,9 @@ export default function Home() {
       <section className="hero">
         <div className="container">
           <div className="hero-copy">
-            <img src={heroTitle} alt="Sumaré Hip Hop Festival" className="hero-title-img" />
+            <img src={heroTitle} alt="Encontro de Danças Urbanas de Sumaré" className="hero-title-img" />
             <p className="sub">
-              Dois dias de cultura Hip Hop gratuita em Sumaré: oficinas de dança, discotecagem,
+              Dois dias de cultura urbana gratuita em Sumaré: aulas de dança, discotecagem,
               encontro e formação para quem já vive a cena e para quem está chegando agora.
             </p>
             <div className="hero-meta">
@@ -52,13 +40,13 @@ export default function Home() {
               <span className="pill vermelho">100% gratuito</span>
             </div>
             <div className="hero-actions">
-              <Link to="/oficinas" className="btn-primary">Fazer inscrição</Link>
-              <Link to="/oficinas" className="btn-secondary">Ver oficinas</Link>
+              <Link to="/inscricao" className="btn-primary">Fazer inscrição</Link>
+              <Link to="/programacao" className="btn-secondary">Ver programação</Link>
             </div>
             <SupportStrip className="support-strip-mobile" />
           </div>
           <div className="hero-illustration">
-            <img src={heroDancer} alt="Bailarino em movimento — identidade visual do Sumaré Hip Hop Festival" />
+            <img src={heroDancer} alt="Bailarino em movimento — identidade visual do Encontro de Danças Urbanas de Sumaré" />
             <SupportStrip className="support-strip-desktop" />
           </div>
         </div>
@@ -71,16 +59,16 @@ export default function Home() {
             <div className="section-kicker">01 — Sobre o projeto</div>
             <img src={sobreTitle} alt="Cultura de rua, formação e encontro" className="sobre-title-img" />
             <p className="lead" style={{ marginTop: 14 }}>
-              O festival nasce como uma experiência gratuita de cultura Hip Hop, dança, formação
-              e desenvolvimento social — aberta para quem já vive a cena e para quem está
+              O encontro nasce como uma experiência gratuita de cultura urbana, dança, formação
+              e desenvolvimento social, aberta para quem já vive a cena e para quem está
               chegando agora.
             </p>
             <div className="stats-row">
               <div className="stat-box"><div className="num">2</div><div className="label">Dias de evento</div></div>
-              <div className="stat-box"><div className="num">8</div><div className="label">Oficinas</div></div>
+              <div className="stat-box"><div className="num">8</div><div className="label">Aulas</div></div>
               <div className="stat-box"><div className="num">100%</div><div className="label">Gratuito</div></div>
               <div className="stat-box highlight">
-                <div className="num">{loading ? '—' : Math.max(totalVagas - totalOcupadas, 0)}</div>
+                <div className="num">{loading ? '—' : vagasDisponiveis}</div>
                 <div className="label">Vagas disponíveis agora</div>
               </div>
             </div>
@@ -97,45 +85,41 @@ export default function Home() {
           <div className="section-kicker">02 — Conceito</div>
           <h2>Uma marca<br />cultural própria.</h2>
           <p className="manifest-text">
-            Rua, movimento, cultura, encontro, formação e território. O Sumaré Hip Hop Festival
-            existe para fortalecer a cena local e abrir acesso à cultura — com força para crescer
-            além de uma única edição.
+            Rua, movimento, cultura, encontro, formação e território. O Encontro de Danças Urbanas
+            de Sumaré existe para fortalecer a cena local e abrir acesso à cultura, com força
+            para crescer além de uma única edição.
           </p>
           <Link to="/sobre" className="link-more">Conheça o projeto completo →</Link>
         </div>
       </section>
 
-      {/* 04 — Escolha sua oficina */}
-      <section className="section dark" id="oficinas">
+      {/* 04 — Programação */}
+      <section className="section dark" id="programacao">
         <div className="container">
           <div className="section-kicker">03 — Programação</div>
-          <h2>Escolha sua oficina.</h2>
-          <p className="lead">Professor, modalidade e horário — reconheça de cara quem vai te ensinar.</p>
+          <h2>Dois dias de aula.</h2>
+          <p className="lead">Quatro aulas por dia. A inscrição vale para o dia inteiro.</p>
 
-          {loading && <p style={{ marginTop: 20 }}>Carregando oficinas...</p>}
-
-          <div className="preview-grid">
-            {workshops.slice(0, 8).map((w) => (
-              <Link key={w.id} to={`/oficinas?select=${w.id}`} className="preview-card">
-                <div className="preview-photo">
-                  {w.teacher_photo_url ? (
-                    <img src={resolveImageUrl(w.teacher_photo_url)!} alt={w.teacher} />
-                  ) : (
-                    <span className="placeholder">{w.teacher.charAt(0)}</span>
-                  )}
-                </div>
-                <div className="preview-body">
-                  <div className="preview-name">{w.teacher}</div>
-                  <div className="preview-modality">{w.name}</div>
-                  <div className="preview-meta">{formatDayLong(w.event_day)} · {w.start_time.slice(0, 5)}</div>
-                  <span className="preview-cta">Ver oficina</span>
-                </div>
-              </Link>
+          <div className="schedule-days" style={{ marginTop: 28 }}>
+            {dias.map((dia) => (
+              <div key={dia} className="schedule-day">
+                <h3>{formatDayHeading(dia)}</h3>
+                {items.filter((i) => i.event_day === dia).map((i, idx) => (
+                  <div key={i.id} className="schedule-row">
+                    <div className="schedule-num">Aula {idx + 1}</div>
+                    <div className="schedule-info">
+                      <div className="schedule-name">{i.name}</div>
+                      <div className="schedule-time">{formatTimeRange(i.start_time, i.duration_minutes)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ))}
           </div>
 
-          <div style={{ marginTop: 34 }}>
-            <Link to="/oficinas" className="btn-primary">Ver todas as oficinas</Link>
+          <div style={{ marginTop: 34, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+            <Link to="/programacao" className="btn-secondary">Ver programação completa</Link>
+            <Link to="/professores" className="btn-secondary">Conhecer os professores</Link>
           </div>
         </div>
       </section>
@@ -145,9 +129,9 @@ export default function Home() {
         <div className="container" style={{ textAlign: 'center' }}>
           <h2>Sua vaga é gratuita.<br />Garanta agora.</h2>
           <p className="lead" style={{ margin: '14px auto 26px' }}>
-            Vagas limitadas por oficina — inscreva-se em quantas quiser, de um único formulário.
+            Vagas limitadas por dia. Escolha o sábado, o domingo ou os dois dias, em um único formulário.
           </p>
-          <Link to="/oficinas" className="btn-primary">Quero me inscrever</Link>
+          <Link to="/inscricao" className="btn-primary">Quero me inscrever</Link>
         </div>
       </section>
 
@@ -171,12 +155,12 @@ export default function Home() {
                 className="btn-secondary"
                 style={{ marginTop: 24, display: 'inline-block' }}
               >
-                Abrir no Google Maps
+                Como chegar
               </a>
             </div>
             <div className="map-frame">
               <iframe
-                src={`https://www.google.com/maps?q=${mapQuery}&output=embed`}
+                src={`https://www.google.com/maps?q=${mapQuery}&hl=pt-BR&z=17&output=embed`}
                 loading="lazy"
                 title="Localização do evento"
                 referrerPolicy="no-referrer-when-downgrade"

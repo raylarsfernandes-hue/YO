@@ -1,36 +1,44 @@
-export type WorkshopStatus = 'disponivel' | 'ultimas' | 'esgotada' | 'encerrada'
+export type DayStatus = 'disponivel' | 'ultimas' | 'esgotado'
 
-export interface WorkshopPublic {
+// Programação pública: aula + horário, sem professor
+export interface ScheduleItem {
   id: string
   name: string
-  teacher: string
-  teacher_photo_url: string | null
-  teacher_bio: string | null
   event_day: string // YYYY-MM-DD
   start_time: string
   duration_minutes: number
-  max_vagas: number
-  active: boolean
   order_index: number
-  taken: number
-  waiting: number
-  vagas_restantes: number
-  status: WorkshopStatus
 }
 
+// Uso interno do admin (tabela workshops)
 export interface Workshop {
   id: string
   name: string
-  teacher: string
-  teacher_photo_url: string | null
-  teacher_bio: string | null
   event_day: string
   start_time: string
   duration_minutes: number
-  max_vagas: number
   active: boolean
   order_index: number
   created_at: string
+}
+
+export interface Teacher {
+  id: string
+  name: string
+  modality: string | null
+  photo_url: string | null
+  bio: string | null
+  order_index: number
+  active: boolean
+}
+
+export interface DayPublic {
+  event_day: string
+  day_number: number
+  max_vagas: number
+  taken: number
+  vagas_restantes: number
+  status: DayStatus
 }
 
 export type RegistrationStatus = 'confirmed' | 'waitlisted' | 'cancelled'
@@ -39,7 +47,7 @@ export type GuardianStatus = 'nao_necessaria' | 'pendente' | 'confirmada'
 export interface RegistrationRow {
   id: string
   code: string
-  workshop_id: string
+  event_day: string
   full_name: string
   cpf: string
   phone: string
@@ -56,39 +64,30 @@ export interface RegistrationRow {
   batch_id: string | null
   checked_in: boolean
   created_at: string
-  workshops?: {
-    name: string
-    teacher: string
-    event_day: string
-    start_time: string
-  }
 }
 
 export interface EventSettings {
   location_name: string
   location_address: string
+  map_query: string | null
   event_start_date: string
   event_end_date: string
+  max_vagas_dia1: number
+  max_vagas_dia2: number
   guardian_authorization_pdf_url: string | null
 }
 
 export interface BatchResult {
   code: string
-  workshop_id: string
-  workshop_name: string
-  teacher: string
   event_day: string
-  start_time: string
   result_status: 'confirmed' | 'waitlisted'
   batch_id: string
 }
 
-export interface ConfirmationData {
+export interface ConfirmationRow {
   code: string
   full_name: string
-  workshop_name: string
-  teacher: string
   event_day: string
-  start_time: string
   status: string
+  batch_id: string
 }

@@ -47,18 +47,68 @@ const MONTHS = [
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
 ]
 
+const WEEKDAYS_LONG = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+
+// Dia escolhido pelo participante: "Sábado, 21/11" e "Domingo, 22/11"
 export function formatDayLong(isoDate: string): string {
   const [y, m, d] = isoDate.split('-').map(Number)
   const date = new Date(y, m - 1, d)
-  return `${d} de ${MONTHS[m - 1]}`
+  return `${WEEKDAYS_LONG[date.getDay()]}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`
 }
 
+// "21/11/2026 — Sábado"
+export function formatDayOption(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y} — ${WEEKDAYS_LONG[date.getDay()]}`
+}
+
+// "14h00 às 15h10"
+export function formatTimeRange(start: string, durationMinutes: number): string {
+  const [h, m] = start.split(':').map(Number)
+  const from = h * 60 + m
+  const f = (mins: number) =>
+    `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}h${String(mins % 60).padStart(2, '0')}`
+  return `${f(from)} às ${f(from + durationMinutes)}`
+}
+
+// "SÁBADO — 21/11"
+export function formatDayHeading(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  return `${WEEKDAYS_LONG[date.getDay()].toUpperCase()} — ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`
+}
+
+// "21/11" | "21 e 22/11" (para listas do admin e exportação)
+export function formatParticipation(days: string[]): string {
+  const sorted = Array.from(new Set(days)).sort()
+  const parts = sorted.map((iso) => {
+    const [, m, d] = iso.split('-').map(Number)
+    return { d: String(d).padStart(2, '0'), m: String(m).padStart(2, '0') }
+  })
+  if (parts.length === 0) return '—'
+  if (parts.length === 1) return `${parts[0].d}/${parts[0].m}`
+  if (parts.every((p) => p.m === parts[0].m)) {
+    return `${parts.map((p) => p.d).join(' e ')}/${parts[0].m}`
+  }
+  return parts.map((p) => `${p.d}/${p.m}`).join(' e ')
+}
+
+// "21 e 22 de novembro de 2026" para vários dias; "21 de novembro de 2026" para um
+export function formatParticipationLong(days: string[]): string {
+  const sorted = Array.from(new Set(days)).sort()
+  if (sorted.length === 0) return ''
+  if (sorted.length === 1) return formatDateRangeShort(sorted[0], sorted[0])
+  return formatDateRangeShort(sorted[0], sorted[sorted.length - 1])
+}
+
+// Destaque da home: "21 e 22 de novembro de 2026"
 export function formatDateRangeShort(startISO: string, endISO: string): string {
-  const [, sm, sd] = startISO.split('-').map(Number)
-  const [, , ed] = endISO.split('-').map(Number)
-  const monthAbbr = MONTHS[sm - 1].slice(0, 3).toUpperCase()
-  if (startISO === endISO) return `${sd} ${monthAbbr}`
-  return `${sd} + ${ed} ${monthAbbr}`
+  const [sy, sm, sd] = startISO.split('-').map(Number)
+  const [, em, ed] = endISO.split('-').map(Number)
+  if (startISO === endISO) return `${sd} de ${MONTHS[sm - 1]} de ${sy}`
+  if (sm !== em) return `${sd} de ${MONTHS[sm - 1]} e ${ed} de ${MONTHS[em - 1]} de ${sy}`
+  return `${sd} e ${ed} de ${MONTHS[sm - 1]} de ${sy}`
 }
 
 export function formatDayShort(isoDate: string): string {
@@ -75,6 +125,8 @@ export function statusLabel(status: string): string {
       return 'Últimas vagas'
     case 'esgotada':
       return 'Esgotada'
+    case 'esgotado':
+      return 'Esgotado'
     case 'encerrada':
       return 'Inscrições encerradas'
     default:
