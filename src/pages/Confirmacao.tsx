@@ -102,7 +102,7 @@ export default function Confirmacao() {
             </p>
 
             <div style={{ marginTop: 26, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link to="/programacao" className="btn-secondary">Ver programação</Link>
+              <Link to={{ pathname: '/', hash: '#programacao' }} className="btn-secondary">Ver programação</Link>
               <Link to="/" className="btn-primary">Voltar ao início</Link>
             </div>
           </>

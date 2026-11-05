@@ -45,8 +45,8 @@ export default function Sobre() {
           </div>
 
           <div style={{ marginTop: 40, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            <Link to="/programacao" className="btn-primary">Ver programação</Link>
-            <Link to="/professores" className="btn-secondary">Conhecer os professores</Link>
+            <Link to={{ pathname: '/', hash: '#programacao' }} className="btn-primary">Ver programação</Link>
+            <Link to={{ pathname: '/', hash: '#professores' }} className="btn-secondary">Conhecer os professores</Link>
           </div>
         </div>
       </section>

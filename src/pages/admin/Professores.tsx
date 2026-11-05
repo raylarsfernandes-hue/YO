@@ -62,8 +62,8 @@ export default function AdminProfessores() {
     <div>
       <h2>Professores</h2>
       <p style={{ opacity: 0.6, fontSize: 14, marginBottom: 20 }}>
-        Professores que aparecem na página Professores do site. Aqui não existe vínculo com aula
-        ou horário: o site só apresenta quem participa do encontro.
+        Professores que aparecem na seção Professores da home. O site mostra só a foto e o nome.
+        Modalidade e release ficam guardados aqui para uso interno e não aparecem no site.
       </p>
 
       {!editing && <button className="btn-sm ok" onClick={startNew}>+ Novo professor</button>}

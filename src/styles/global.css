@@ -186,17 +186,18 @@ button {
   width: auto;
   max-width: 100%;
   height: auto;
-  max-height: 560px;
+  max-height: 600px;
   display: block;
+  filter: drop-shadow(0 18px 40px rgba(0,0,0,0.55));
 }
 .hero-title-img {
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   height: auto;
   display: block;
 }
 @media (max-width: 900px) {
-  .hero-title-img { max-width: 300px; }
+  .hero-title-img { max-width: 330px; }
 }
 .sobre-title-img {
   width: 100%;
@@ -278,8 +279,8 @@ button {
 }
 @media (max-width: 900px) {
   .hero .container { grid-template-columns: 1fr; }
-  .hero-illustration { order: -1; max-height: 46vh; overflow: hidden; }
-  .hero-illustration img { max-width: 320px; }
+  .hero-illustration { order: -1; }
+  .hero-illustration img { max-width: 100%; max-height: 44vh; filter: none; }
   .hero-illustration .support-strip-desktop { display: none; }
   .hero-copy { padding-bottom: 30px; }
   .support-strip.support-strip-mobile { display: flex; }
@@ -1088,3 +1089,125 @@ button {
 .day-option-vagas { font-size: 13px; opacity: 0.8; }
 .day-option-vagas.ultimas { color: var(--amarelo); opacity: 1; }
 .day-option-vagas.esgotado { color: #ff8890; font-weight: 700; opacity: 1; }
+
+
+/* ---------- Programação em abas (estilo app) ---------- */
+.sched-section { scroll-margin-top: 70px; }
+#professores, #local, #programacao { scroll-margin-top: 70px; }
+.sched { margin-top: 28px; max-width: 860px; }
+.sched-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 6px;
+  background: var(--branco);
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.sched-tab {
+  border: none;
+  background: transparent;
+  color: #5b5b55;
+  border-radius: 13px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+.sched-tab-date { font-family: 'Oswald', sans-serif; font-size: 26px; font-weight: 700; line-height: 1; }
+.sched-tab-day { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+.sched-tab.active {
+  background: var(--amarelo);
+  color: var(--preto);
+  box-shadow: 0 6px 16px rgba(242,183,5,0.35);
+}
+.sched-tab:not(.active):hover { background: rgba(0,0,0,0.04); }
+.sched-list {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: sched-in 0.25s ease;
+}
+@keyframes sched-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.sched-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: var(--branco);
+  border-radius: 18px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 10px 24px rgba(0,0,0,0.05);
+}
+.sched-time {
+  min-width: 84px;
+  text-align: center;
+  background: var(--preto);
+  color: var(--amarelo);
+  border-radius: 14px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sched-time strong { font-family: 'Oswald', sans-serif; font-size: 22px; line-height: 1; letter-spacing: 0.01em; }
+.sched-time span { font-size: 11px; color: var(--off-white); opacity: 0.75; }
+.sched-body { display: flex; flex-direction: column; gap: 3px; }
+.sched-aula { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--vermelho); }
+.sched-body h4 { font-family: 'Oswald', sans-serif; font-size: 24px; color: var(--preto); }
+.sched-foot { margin-top: 22px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.sched-foot p { margin: 0; font-size: 14px; color: #55554f; }
+.sched-empty { margin-top: 20px; opacity: 0.7; }
+@media (max-width: 560px) {
+  .sched-card { gap: 14px; padding: 14px 14px; }
+  .sched-time { min-width: 74px; }
+  .sched-body h4 { font-size: 21px; }
+  .sched-foot .btn-primary { width: 100%; text-align: center; }
+}
+
+/* ---------- Professores na home: só foto + nome ---------- */
+.teachers-row {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+.teacher-tile { margin: 0; }
+.teacher-photo {
+  aspect-ratio: 4 / 5;
+  background: var(--preto-suave);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 4px solid var(--amarelo);
+}
+.teacher-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; filter: grayscale(0.15) contrast(1.03); }
+.teacher-initial { font-family: 'Oswald', sans-serif; font-size: 56px; font-weight: 700; color: var(--amarelo); opacity: 0.45; }
+.teacher-tile figcaption {
+  margin-top: 10px;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  color: var(--branco);
+}
+@media (max-width: 760px) {
+  .teachers-row {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin-left: -16px;
+    margin-right: -16px;
+    padding: 0 16px 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .teacher-tile { flex: 0 0 62%; max-width: 240px; scroll-snap-align: start; }
+}

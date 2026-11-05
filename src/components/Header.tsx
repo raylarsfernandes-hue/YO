@@ -10,10 +10,10 @@ export default function Header() {
         </Link>
         <nav>
           <Link to="/">Início</Link>
-          <Link to="/programacao">Programação</Link>
-          <Link to="/professores">Professores</Link>
+          <Link to={{ pathname: '/', hash: '#programacao' }}>Programação</Link>
+          <Link to={{ pathname: '/', hash: '#professores' }}>Professores</Link>
           <Link to="/inscricao">Inscrições</Link>
-          <a href="/#local">Local</a>
+          <Link to={{ pathname: '/', hash: '#local' }}>Local</Link>
           <Link to="/inscricao" className="btn-inscrever">Inscreva-se</Link>
         </nav>
       </div>

@@ -109,14 +109,23 @@ select w.teacher,
 
 alter table teachers enable row level security;
 
+-- visitantes NÃO leem a tabela (ela guarda modalidade e release); só a view abaixo
 drop policy if exists teachers_select_active on teachers;
-create policy teachers_select_active on teachers for select using (active);
 
 drop policy if exists teachers_admin_all on teachers;
 create policy teachers_admin_all on teachers for all using (is_admin()) with check (is_admin());
 
-grant select on teachers to anon, authenticated;
-grant insert, update, delete on teachers to authenticated;
+grant select, insert, update, delete on teachers to authenticated;
+revoke all on teachers from anon;
+
+-- o que o site mostra: só id, nome, foto e ordem (sem modalidade, aula, dia ou horário)
+drop view if exists teachers_public;
+create view teachers_public as
+select id, name, photo_url, order_index
+  from teachers
+ where active;
+
+grant select on teachers_public to anon, authenticated;
 
 -- a coluna de professor da oficina deixa de ser obrigatória (a programação não mostra professor)
 alter table workshops alter column teacher drop not null;
@@ -414,5 +423,5 @@ grant execute on function admin_promote_waitlist to authenticated;
 -- ---------------------------------------------------------
 select * from days_public order by event_day;
 select name, event_day, start_time from schedule_public order by event_day, start_time;
-select name, modality, order_index from teachers order by order_index;
+select name, photo_url, order_index from teachers_public order by order_index;
 select location_name, location_address, map_query, max_vagas_dia1, max_vagas_dia2 from event_settings;

@@ -1,8 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Home from './pages/Home'
 import Sobre from './pages/Sobre'
-import Professores from './pages/Professores'
-import Programacao from './pages/Programacao'
 import Inscricao from './pages/Inscricao'
 import Confirmacao from './pages/Confirmacao'
 import AdminLogin from './pages/admin/Login'
@@ -19,9 +17,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/sobre" element={<Sobre />} />
-        <Route path="/professores" element={<Professores />} />
-        <Route path="/programacao" element={<Programacao />} />
-        <Route path="/oficinas" element={<Navigate to="/programacao" replace />} />
+        <Route path="/professores" element={<Navigate to="/#professores" replace />} />
+        <Route path="/programacao" element={<Navigate to="/#programacao" replace />} />
+        <Route path="/oficinas" element={<Navigate to="/#programacao" replace />} />
         <Route path="/inscricao" element={<Inscricao />} />
         <Route path="/confirmacao/:batchId" element={<Confirmacao />} />
 

@@ -72,6 +72,15 @@ export function formatTimeRange(start: string, durationMinutes: number): string 
   return `${f(from)} às ${f(from + durationMinutes)}`
 }
 
+// { from: "14h00", to: "15h10" }
+export function timeParts(start: string, durationMinutes: number): { from: string; to: string } {
+  const [h, m] = start.split(':').map(Number)
+  const from = h * 60 + m
+  const f = (mins: number) =>
+    `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}h${String(mins % 60).padStart(2, '0')}`
+  return { from: f(from), to: f(from + durationMinutes) }
+}
+
 // "SÁBADO — 21/11"
 export function formatDayHeading(isoDate: string): string {
   const [y, m, d] = isoDate.split('-').map(Number)
@@ -109,6 +118,18 @@ export function formatDateRangeShort(startISO: string, endISO: string): string {
   if (startISO === endISO) return `${sd} de ${MONTHS[sm - 1]} de ${sy}`
   if (sm !== em) return `${sd} de ${MONTHS[sm - 1]} e ${ed} de ${MONTHS[em - 1]} de ${sy}`
   return `${sd} e ${ed} de ${MONTHS[sm - 1]} de ${sy}`
+}
+
+// "Sábado" / "Domingo"
+export function weekdayName(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-').map(Number)
+  return WEEKDAYS_LONG[new Date(y, m - 1, d).getDay()]
+}
+
+// "21/11"
+export function dayMonth(isoDate: string): string {
+  const [, m, d] = isoDate.split('-').map(Number)
+  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`
 }
 
 export function formatDayShort(isoDate: string): string {

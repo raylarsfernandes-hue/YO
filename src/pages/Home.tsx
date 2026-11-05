@@ -1,11 +1,14 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import SupportStrip from '../components/SupportStrip'
 import { useEventSettings } from '../hooks/useEventSettings'
 import { useDays } from '../hooks/useDays'
-import { useSchedule } from '../hooks/useSchedule'
-import { formatDayHeading, formatDateRangeShort, formatTimeRange } from '../utils/format'
+import { useTeachers } from '../hooks/useTeachers'
+import ScheduleTabs from '../components/ScheduleTabs'
+import { formatDateRangeShort } from '../utils/format'
+import { resolveImageUrl } from '../utils/image'
 import heroDancer from '../assets/hero_dancer.webp'
 import heroTitle from '../assets/logo_evento.webp'
 import sobreDancer from '../assets/sobre_dancer.webp'
@@ -14,7 +17,16 @@ import sobreTitle from '../assets/sobre_title.webp'
 export default function Home() {
   const { settings } = useEventSettings()
   const { days, loading } = useDays()
-  const { items, dias } = useSchedule()
+  const { teachers, loading: loadingTeachers } = useTeachers()
+  const location = useLocation()
+
+  // rolagem até a seção quando o link vem com âncora (#programacao, #professores, #local)
+  useEffect(() => {
+    if (!location.hash) return
+    const id = location.hash.slice(1)
+    const t = setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150)
+    return () => clearTimeout(t)
+  }, [location.hash, loading, loadingTeachers])
 
   const vagasDisponiveis = days.reduce((acc, d) => acc + d.vagas_restantes, 0)
   const mapQuery = encodeURIComponent(
@@ -41,7 +53,7 @@ export default function Home() {
             </div>
             <div className="hero-actions">
               <Link to="/inscricao" className="btn-primary">Fazer inscrição</Link>
-              <Link to="/programacao" className="btn-secondary">Ver programação</Link>
+              <Link to={{ pathname: '/', hash: '#programacao' }} className="btn-secondary">Ver programação</Link>
             </div>
             <SupportStrip className="support-strip-mobile" />
           </div>
@@ -93,33 +105,40 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 04 — Programação */}
-      <section className="section dark" id="programacao">
+      {/* 03 — Programação */}
+      <section className="section off sched-section" id="programacao">
         <div className="container">
           <div className="section-kicker">03 — Programação</div>
           <h2>Dois dias de aula.</h2>
-          <p className="lead">Quatro aulas por dia. A inscrição vale para o dia inteiro.</p>
+          <p className="lead">Quatro aulas por dia. Escolha o dia e veja os horários.</p>
+          <ScheduleTabs />
+        </div>
+      </section>
 
-          <div className="schedule-days" style={{ marginTop: 28 }}>
-            {dias.map((dia) => (
-              <div key={dia} className="schedule-day">
-                <h3>{formatDayHeading(dia)}</h3>
-                {items.filter((i) => i.event_day === dia).map((i, idx) => (
-                  <div key={i.id} className="schedule-row">
-                    <div className="schedule-num">Aula {idx + 1}</div>
-                    <div className="schedule-info">
-                      <div className="schedule-name">{i.name}</div>
-                      <div className="schedule-time">{formatTimeRange(i.start_time, i.duration_minutes)}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      {/* 04 — Professores */}
+      <section className="section dark" id="professores">
+        <div className="container">
+          <div className="section-kicker">04 — Professores</div>
+          <h2>Quem vem pro encontro.</h2>
+          <p className="lead">Profissionais que vivem a cena todos os dias e foram convidados para essa edição.</p>
+
+          {!loadingTeachers && teachers.length === 0 && (
+            <p style={{ marginTop: 20, opacity: 0.7 }}>Os professores serão divulgados em breve.</p>
+          )}
+
+          <div className="teachers-row">
+            {teachers.map((t) => (
+              <figure key={t.id} className="teacher-tile">
+                <div className="teacher-photo">
+                  {t.photo_url ? (
+                    <img src={resolveImageUrl(t.photo_url)!} alt={t.name} loading="lazy" />
+                  ) : (
+                    <span className="teacher-initial">{t.name.charAt(0)}</span>
+                  )}
+                </div>
+                <figcaption>{t.name}</figcaption>
+              </figure>
             ))}
-          </div>
-
-          <div style={{ marginTop: 34, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            <Link to="/programacao" className="btn-secondary">Ver programação completa</Link>
-            <Link to="/professores" className="btn-secondary">Conhecer os professores</Link>
           </div>
         </div>
       </section>
@@ -138,7 +157,7 @@ export default function Home() {
       {/* 06 — Local */}
       <section className="section dark" id="local">
         <div className="container">
-          <div className="section-kicker">04 — Local e informações</div>
+          <div className="section-kicker">05 — Local e informações</div>
           <h2>{settings.location_name}.</h2>
 
           <div className="local-section" style={{ marginTop: 30 }}>
