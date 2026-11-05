@@ -17,5 +17,11 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
+  "exclude": [
+    "src/pages/Oficinas.tsx",
+    "src/pages/admin/Oficinas.tsx",
+    "src/components/WorkshopCard.tsx",
+    "src/context"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
